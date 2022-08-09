@@ -1,0 +1,13 @@
+## Interface: 20504
+## Title: ClassicRandomMounter
+## Author: Tranzalore
+## Version: 2.1.1
+
+Lib\Mounts.lua
+
+main.lua
+
+#When loaded the addon will create a "Mount" macro
+#When the "Mount" macro is run it will update the mounts that are in the macro to a random mount from your bag so that the next time you use it you will get a different mount.
+#Checks to see if you are in a flying zone and uses a flying mound if you are.
+#Can force a ground mount in a flying zone by holding alt
