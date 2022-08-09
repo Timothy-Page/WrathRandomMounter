@@ -1,6 +1,6 @@
 local addonName, WrathRandomMounter = ...
 
-SLASH_CRM1 = "/WRM"
+SLASH_WRM1 = "/WRM"
 local inDebugMode = false
 
 local mounted = IsMounted()
@@ -27,7 +27,7 @@ end
 local waitTable = {};
 local waitFrame = nil;
 
-function crm_wait(delay, func, ...)
+function wrm_wait(delay, func, ...)
   if(type(delay)~="number" or type(func)~="function") then
     return false;
   end
@@ -225,10 +225,10 @@ end
 local function InitialStartupHandler(forceRunHandler, debugString)
   InitialStartup(forceRunHandler, debugString)
   
-  crm_wait(10, InitialStartup, forceRunHandler, debugString)
+  wrm_wait(10, InitialStartup, forceRunHandler, debugString)
 end
 
-local function CRMHandler(parameter)
+local function WRMHandler(parameter)
     
   if(string.len(parameter) > 0) then
     if parameter == "list" then
@@ -250,7 +250,7 @@ local function CRMHandler(parameter)
     end
     local groundMount, flyingMount = GetRandomMounts()
     if IsMounted() == false then
-      crm_wait(0.1, UpdateMacro, groundMount, flyingMount)
+      wrm_wait(0.1, UpdateMacro, groundMount, flyingMount)
     end
   end
 
@@ -265,7 +265,7 @@ EnterWorldFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 EnterWorldFrame:SetScript("OnEvent", InitialStartupHandler)
 
 -- Register slash commands
-SlashCmdList["WRM"] = CRMHandler;
+SlashCmdList["WRM"] = WRMHandler;
 
 
 

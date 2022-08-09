@@ -1,7 +1,7 @@
-## Interface: 20504
-## Title: ClassicRandomMounter
+## Interface: 30400
+## Title: WrathRandomMounter
 ## Author: Tranzalore
-## Version: 2.1.1
+## Version: 1.1.1
 
 Lib\Mounts.lua
 

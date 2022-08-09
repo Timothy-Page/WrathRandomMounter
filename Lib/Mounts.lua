@@ -1,6 +1,6 @@
-local addonName, ClassicRandomMounter = ...
+local addonName, WrathRandomMounter = ...
 
-ClassicRandomMounter.itemMounts = {
+WrathRandomMounter.itemMounts = {
     -- "MountName, SpellID, ItemID, Speed, Category"
     ["Acherus Deathcharger"] ={"Acherus Deathcharger", 48778, 0, 1, "DeathKnight, Mounts"},
     ["Albino Drake"] ={"Albino Drake", 60025, 44178, 2.8, "Mounts"},
