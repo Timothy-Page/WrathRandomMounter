@@ -14,8 +14,6 @@ main.lua
 #/cast [mounted] !Sanctity Aura
 #/click MultiBarBottomRightButton1
 #
-# 
-#
 #How it works:
 #When loaded the addon will create a "Mount" macro
 #When the "Mount" macro is run it will update the mounts that are in the macro to a random mount from your companion collection so that the next time you use it you will get a different mount.
@@ -26,8 +24,6 @@ main.lua
 #/WRM update - This will recheck the mounts that you have and update the macro "Mount" which you use to get on a random mount.
 #/WRM list - This will print out a list of all the mounts the addon thinks you have.
 #/WRM - This will update the macro with a new randomly selected mount that the addon already thinks you have.
-#
-# 
 #
 #Future Plans:
 #Add mount families to the random logic so you will first roll a "Drake" then roll the verdant neither drake inside the "Drake" family so that you will see an even amount of each "family" of mounts even if you have 12 gryphons and only 1 drake.
