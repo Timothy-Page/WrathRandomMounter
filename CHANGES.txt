@@ -1,10 +1,20 @@
-tag 6e0686286929fa67feebd554f8c40376361f56fb 1.1.8-Release
-Author:	Timothy-Page <timothypage.tp@gmail.com>
-Date:	Wed Jul 27 12:04:25 2022 +1000
-
-commit e61203e996ee7c35fa41e7acd5963666ad520a18
+commit 5a74ad0830699a49d9962b2dbe50c25cac872b57
 Author: Timothy-Page <timothypage.tp@gmail.com>
-Date:   Wed Jul 27 12:03:48 2022 +1000
+Date:   Wed Aug 10 08:53:01 2022 +1000
 
-    updateded Interface version
+    renames from classic random mounter to wrath random mounter
+
+commit d2d2f240d2c60df3f6852547b3f3ce0d542cef13
+Author: Timothy-Page <timothypage.tp@gmail.com>
+Date:   Tue Aug 9 22:59:58 2022 +1000
+
+    Quick update for addon to work in Wotlk
+    
+    Upadted the mounte libary to have the spellID of all mounts which can be checked in the companion API to see if the player has the mount.
+
+commit 304e407be708968b470f32ca2cf3bcbc82f98144
+Author: Timothy-Page <44987179+Timothy-Page@users.noreply.github.com>
+Date:   Tue Aug 9 22:51:46 2022 +1000
+
+    Initial commit
 

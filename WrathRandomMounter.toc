@@ -1,32 +1,13 @@
 ## Interface: 30400
 ## Title: WrathRandomMounter
 ## Author: Tranzalore
-## Version: 1.1.1
+## Version: 1.1.2
 
 Lib\Mounts.lua
 
 main.lua
 
-#PLEASE NOTE:
-#This addon creates and updates a macro to let you use a random mount. You will need to add this macro to your action bars to use it. You can allso call this macro from your own custom macro if you want to do something like change to Crusader aura at the same time you mount up. The below works if you place this addon's macro at MultiBarBottomRightButton1 on your action bars.
-# #showtooltip
-#/cast [nomounted] !Crusader Aura
-#/cast [mounted] !Sanctity Aura
-#/click MultiBarBottomRightButton1
-#
-#How it works:
 #When loaded the addon will create a "Mount" macro
-#When the "Mount" macro is run it will update the mounts that are in the macro to a random mount from your companion collection so that the next time you use it you will get a different mount.
+#When the "Mount" macro is run it will update the mounts that are in the macro to a random mount from your bag so that the next time you use it you will get a different mount.
 #Checks to see if you are in a flying zone and uses a flying mound if you are.
 #Can force a ground mount in a flying zone by holding alt
-#
-#You can use the following commands to debug...
-#/WRM update - This will recheck the mounts that you have and update the macro "Mount" which you use to get on a random mount.
-#/WRM list - This will print out a list of all the mounts the addon thinks you have.
-#/WRM - This will update the macro with a new randomly selected mount that the addon already thinks you have.
-#
-#Future Plans:
-#Add mount families to the random logic so you will first roll a "Drake" then roll the verdant neither drake inside the "Drake" family so that you will see an even amount of each "family" of mounts even if you have 12 gryphons and only 1 drake.
-#Add ability to set custom weights, this will allow you to choose to see a "Drake" x times more than a boring "Gryphon" or the verdant neither drake x times more than the onyx neither drake.
-#Missing mounts list /WRM missing to get a list of mounts you could farm and /WRM mising [mountname] to see how to get it.
-#Duplicate mount features for companion pets

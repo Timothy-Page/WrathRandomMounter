@@ -11,7 +11,8 @@ local myMounts = {
   ["mySwiftGroundMounts"] = {},
   ["myFlyingMounts"] = {},
   ["mySwiftFlyingMounts"] = {},
-  ["mySuperSwiftFlyingMounts"] = {}
+  ["mySuperSwiftFlyingMounts"] = {},
+  ["mySwimmingMounts"] = {}
 }
 
 local myMountsCount = 0
@@ -162,39 +163,43 @@ local function UpdateMyMounts()
     ["mySwiftGroundMounts"] = {},
     ["myFlyingMounts"] = {},
     ["mySwiftFlyingMounts"] = {},
-    ["mySuperSwiftFlyingMounts"] = {}
+    ["mySuperSwiftFlyingMounts"] = {},
+    ["mySwimmingMounts"] = {}
   }
 
   CompanionType = "MOUNT"
-  MountsInBag = {}
+  MountsKnown = {}
   numMounts = GetNumCompanions(CompanionType)
   --print("Number of Mounts: " .. tostring(numMounts))
   mountCounter = 1
   while mountCounter <= numMounts do --numMounts
     creatureID, creatureName, creatureSpellID, icon, issummoned, mountType = GetCompanionInfo(CompanionType, mountCounter)
     --print(tostring(creatureSpellID))
-    table.insert(MountsInBag, creatureSpellID)
+    table.insert(MountsKnown, creatureSpellID)
     --print ("Mount: " .. tostring(mountCounter) .. ", Name: " .. tostring(creatureName) .. ", Type: " .. tostring(mountType))
     mountCounter = mountCounter + 1
   end
 
-  for mount in pairs(WrathRandomMounter.itemMounts) do
-    if tableContains(MountsInBag, WrathRandomMounter.itemMounts[mount][2]) then
+  for mount in pairs(WrathRandomMounter.itemMounts) do --2:SpellID, 4:MaxSpeed, 5:MinSpeed, 6:SwimSpeed
+    if tableContains(MountsKnown, WrathRandomMounter.itemMounts[mount][2]) then
       --print(WrathRandomMounter.itemMounts[mount][4])
-      if WrathRandomMounter.itemMounts[mount][4] <= 1 then
+      if WrathRandomMounter.itemMounts[mount][5] <= 1 and WrathRandomMounter.itemMounts[mount][4] > 0 then
         table.insert(myMounts["myGroundMounts"], WrathRandomMounter.itemMounts[mount])
       end
-      if WrathRandomMounter.itemMounts[mount][4] == 1 then
+      if WrathRandomMounter.itemMounts[mount][5] <= 1 and WrathRandomMounter.itemMounts[mount][4] >=1 then
         table.insert(myMounts["mySwiftGroundMounts"], WrathRandomMounter.itemMounts[mount])
       end
       if WrathRandomMounter.itemMounts[mount][4] > 1 then
         table.insert(myMounts["myFlyingMounts"], WrathRandomMounter.itemMounts[mount])
       end
-      if WrathRandomMounter.itemMounts[mount][4] >= 2.8 then
+      if WrathRandomMounter.itemMounts[mount][5] <= 2.8 and WrathRandomMounter.itemMounts[mount][4] >= 2.8 then
         table.insert(myMounts["mySwiftFlyingMounts"], WrathRandomMounter.itemMounts[mount])
       end
       if WrathRandomMounter.itemMounts[mount][4] > 2.8 then
         table.insert(myMounts["mySuperSwiftFlyingMounts"], WrathRandomMounter.itemMounts[mount])
+      end
+      if WrathRandomMounter.itemMounts[mount][6] > 0 then
+        table.insert(myMounts["mySwimmingMounts"], WrathRandomMounter.itemMounts[mount])
       end
     end
   end
@@ -204,6 +209,7 @@ local function UpdateMyMounts()
   numberOfMounts = numberOfMounts + tablelength(myMounts["myFlyingMounts"])
   numberOfMounts = numberOfMounts + tablelength(myMounts["mySwiftFlyingMounts"])
   numberOfMounts = numberOfMounts + tablelength(myMounts["mySuperSwiftFlyingMounts"])
+  numberOfMounts = numberOfMounts + tablelength(myMounts["mySwimmingMounts"])
 
   myMountsPreviousCount = myMountsCount
   myMountsCount = numberOfMounts
