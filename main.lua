@@ -90,6 +90,7 @@ local function GetRandomMounts()
   local flyingMount = GetRandomMount("myFlyingMounts")
   local swiftFlyingMount = GetRandomMount("mySwiftFlyingMounts")
   local superSwiftFlyingMount = GetRandomMount("mySuperSwiftFlyingMounts")
+  local swimmingMount = GetRandomMount("mySwimmingMounts")
   
   if superSwiftFlyingMount ~= nil then
     swiftFlyingMount = superSwiftFlyingMount
@@ -101,14 +102,15 @@ local function GetRandomMounts()
     groundMount = swiftGroundMount
   end
 
-  return groundMount, flyingMount
+  return groundMount, flyingMount, swimmingMount
 end
 
-local function UpdateMacro(groundMount, flyingMount)
+local function UpdateMacro(groundMount, flyingMount, swimmingMount)
 
     local groundMountMacro = ""
     local groundMountMacro2 = ""
     local flyingMountMacro = ""
+    local swimmingMountMacro = ""
     local tooltip = ""
 
     if groundMount ~= nil then
@@ -122,8 +124,11 @@ local function UpdateMacro(groundMount, flyingMount)
         tooltip = tostring(flyingMount)
       end
     end
+    if swimmingMount ~= nil then
+      swimmingMountMacro = "\n/cast [swimming] " .. tostring(swimmingMount)
+    end
 
-    local body = "#showtooltip " .. tooltip .. "\n/stopcasting" .. groundMountMacro .. flyingMountMacro .. groundMountMacro2 .. "\n/WRM" .. "\n/dismount"
+    local body = "#showtooltip " .. "\n/stopcasting" .. groundMountMacro .. swimmingMountMacro .. flyingMountMacro .. groundMountMacro2 .. "\n/WRM" .. "\n/dismount"
     --print (body)
     EditMacro("Mount", "Mount", nil, body, 1, 1)
 end
@@ -223,9 +228,9 @@ end
 local function InitialStartup(forceRunHandler, debugString)
   UpdateMyMounts()
 
-  local groundMount, flyingMount = GetRandomMounts()
+  local groundMount, flyingMount, swimmingMount = GetRandomMounts()
 
-  UpdateMacro(groundMount, flyingMount)
+  UpdateMacro(groundMount, flyingMount, swimmingMount)
 end
 
 local function InitialStartupHandler(forceRunHandler, debugString)
@@ -254,9 +259,9 @@ local function WRMHandler(parameter)
     if myMountsCount ~= myMountsPreviousCount then --used to ensure that all mounts are found
       InitialStartup()
     end
-    local groundMount, flyingMount = GetRandomMounts()
+    local groundMount, flyingMount, swimmingMount = GetRandomMounts()
     if IsMounted() == false then
-      wrm_wait(0.1, UpdateMacro, groundMount, flyingMount)
+      wrm_wait(0.1, UpdateMacro, groundMount, flyingMount, swimmingMount)
     end
   end
 
