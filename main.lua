@@ -14,6 +14,12 @@ local myMounts = {
   ["mySuperSwiftFlyingMounts"] = {},
   ["mySwimmingMounts"] = {}
 }
+local myGroundMountsCategories = {}
+local mySwiftGroundMountsCategories = {}
+local myFlyingMountsCategories = {}
+local mySwiftFlyingMountsCategories = {}
+local mySuperSwiftFlyingMountsCategories = {}
+local mySwimmingMountsCategories = {}
 
 local myMountsCount = 0
 local myMountsPreviousCount = 0
@@ -59,11 +65,13 @@ end
 local function PrintMounts()
   for mountType in pairs (myMounts) do
     local mountString = nil
-    for mount in pairs(myMounts[mountType]) do
-      if mountString == nil then
-        mountString = myMounts[mountType][mount][1]
-      else
-        mountString = mountString .. ", " .. myMounts[mountType][mount][1]
+    for mountCategory in pairs(myMounts[mountType]) do
+      for mount in pairs(myMounts[mountType][mountCategory]) do
+        if mountString == nil then
+          mountString = myMounts[mountType][mountCategory][mount][1]
+        else
+          mountString = mountString .. ", " .. myMounts[mountType][mountCategory][mount][1]
+        end
       end
     end
     print(mountType .. ": " .. tostring(mountString))
@@ -71,14 +79,30 @@ local function PrintMounts()
 end
 
 local function GetRandomMount(mountType)
-  local numberOfMounts = tablelength(myMounts[mountType])
-
+  local numberOfCategories = tablelength(myMounts[mountType])
   local mount
-
-  if numberOfMounts > 0 then
-    local mountID = math.random(numberOfMounts)
-
-    mount = myMounts[mountType][mountID][1]
+  if numberOfCategories > 0 then
+    local CategoryId = math.random(numberOfCategories)
+    local CategoryName = nil
+    if mountType == "myGroundMounts" then
+      CategoryName = myGroundMountsCategories[CategoryId]
+    elseif mountType == "mySwiftGroundMounts" then
+      CategoryName = mySwiftGroundMountsCategories[CategoryId]
+    elseif mountType == "myFlyingMounts" then
+      CategoryName = myFlyingMountsCategories[CategoryId]
+    elseif mountType == "mySwiftFlyingMounts" then
+      CategoryName = mySwiftFlyingMountsCategories[CategoryId]
+    elseif mountType == "mySuperSwiftFlyingMounts" then
+      CategoryName = mySuperSwiftFlyingMountsCategories[CategoryId]
+    elseif mountType == "mySwimmingMounts" then
+      CategoryName = mySwimmingMountsCategories[CategoryId]
+    end
+    --print(mountType .. " Category Picker was: " .. tostring(CategoryName))
+    local numberOfMounts = tablelength(myMounts[mountType][CategoryName])
+    if numberOfMounts > 0 then
+      local mountID = math.random(numberOfMounts)
+      mount = myMounts[mountType][CategoryName][mountID][1]
+    end
   end
 
   return mount
@@ -162,6 +186,18 @@ local function tableContains(table, element)
   return false
 end
 
+local function AddMountMyMounts(type, category, mount)
+  --print("AddMount:" .. type .. ", " .. category .. ", " .. tostring(mount))
+  if myMounts[type][category] == nil then
+    --myMounts[type].insert(key = category, val = {mount})
+    myMounts[type][category] = {mount}
+  else
+    --myMounts[type][category].insert(mount)
+    table.insert(myMounts[type][category], mount)
+  end
+
+end
+
 local function UpdateMyMounts()
   myMounts = {
     ["myGroundMounts"] = {},
@@ -185,30 +221,57 @@ local function UpdateMyMounts()
     mountCounter = mountCounter + 1
   end
 
-  for mount in pairs(WrathRandomMounter.itemMounts) do --2:SpellID, 4:MaxSpeed, 5:MinSpeed, 6:SwimSpeed
+  for mount in pairs(WrathRandomMounter.itemMounts) do --2:SpellID, 4:MaxSpeed, 5:MinSpeed, 6:SwimSpeed, 7:Category
     if tableContains(MountsKnown, WrathRandomMounter.itemMounts[mount][2]) then
       --print(WrathRandomMounter.itemMounts[mount][4])
       if WrathRandomMounter.itemMounts[mount][5] <= 1 and WrathRandomMounter.itemMounts[mount][4] > 0 then
-        table.insert(myMounts["myGroundMounts"], WrathRandomMounter.itemMounts[mount])
+        --table.insert(myMounts["myGroundMounts"], WrathRandomMounter.itemMounts[mount])
+        AddMountMyMounts("myGroundMounts", WrathRandomMounter.itemMounts[mount][7], WrathRandomMounter.itemMounts[mount])
       end
       if WrathRandomMounter.itemMounts[mount][5] <= 1 and WrathRandomMounter.itemMounts[mount][4] >=1 then
-        table.insert(myMounts["mySwiftGroundMounts"], WrathRandomMounter.itemMounts[mount])
+        --table.insert(myMounts["mySwiftGroundMounts"], WrathRandomMounter.itemMounts[mount])
+        AddMountMyMounts("mySwiftGroundMounts", WrathRandomMounter.itemMounts[mount][7], WrathRandomMounter.itemMounts[mount])
       end
       if WrathRandomMounter.itemMounts[mount][4] > 1 then
-        table.insert(myMounts["myFlyingMounts"], WrathRandomMounter.itemMounts[mount])
+        --table.insert(myMounts["myFlyingMounts"], WrathRandomMounter.itemMounts[mount])
+        AddMountMyMounts("myFlyingMounts", WrathRandomMounter.itemMounts[mount][7], WrathRandomMounter.itemMounts[mount])
       end
       if WrathRandomMounter.itemMounts[mount][5] <= 2.8 and WrathRandomMounter.itemMounts[mount][4] >= 2.8 then
-        table.insert(myMounts["mySwiftFlyingMounts"], WrathRandomMounter.itemMounts[mount])
+        --table.insert(myMounts["mySwiftFlyingMounts"], WrathRandomMounter.itemMounts[mount])
+        AddMountMyMounts("mySwiftFlyingMounts", WrathRandomMounter.itemMounts[mount][7], WrathRandomMounter.itemMounts[mount])
       end
       if WrathRandomMounter.itemMounts[mount][4] > 2.8 then
-        table.insert(myMounts["mySuperSwiftFlyingMounts"], WrathRandomMounter.itemMounts[mount])
+        --table.insert(myMounts["mySuperSwiftFlyingMounts"], WrathRandomMounter.itemMounts[mount])
+        AddMountMyMounts("mySuperSwiftFlyingMounts", WrathRandomMounter.itemMounts[mount][7], WrathRandomMounter.itemMounts[mount])
       end
       if WrathRandomMounter.itemMounts[mount][6] > 0 then
-        table.insert(myMounts["mySwimmingMounts"], WrathRandomMounter.itemMounts[mount])
+        --table.insert(myMounts["mySwimmingMounts"], WrathRandomMounter.itemMounts[mount])
+        AddMountMyMounts("mySwimmingMounts", WrathRandomMounter.itemMounts[mount][7], WrathRandomMounter.itemMounts[mount])
       end
     end
   end
   
+  for mountCategory, mounts in pairs(myMounts["myGroundMounts"]) do
+    table.insert(myGroundMountsCategories, mountCategory)
+  end
+  for mountCategory, mounts in pairs(myMounts["mySwiftGroundMounts"]) do
+    table.insert(mySwiftGroundMountsCategories, mountCategory)
+  end
+  for mountCategory, mounts in pairs(myMounts["myFlyingMounts"]) do
+    table.insert(myFlyingMountsCategories, mountCategory)
+  end
+  for mountCategory, mounts in pairs(myMounts["mySwiftFlyingMounts"]) do
+    table.insert(mySwiftFlyingMountsCategories, mountCategory)
+  end
+  for mountCategory, mounts in pairs(myMounts["mySuperSwiftFlyingMounts"]) do
+    table.insert(mySuperSwiftFlyingMountsCategories, mountCategory)
+  end
+  for mountCategory, mounts in pairs(myMounts["mySwimmingMounts"]) do
+    table.insert(mySwimmingMountsCategories, mountCategory)
+  end
+
+  --local mySwimmingMountsCategories = {}
+
   local numberOfMounts = tablelength(myMounts["myGroundMounts"])
   numberOfMounts = numberOfMounts + tablelength(myMounts["mySwiftGroundMounts"])
   numberOfMounts = numberOfMounts + tablelength(myMounts["myFlyingMounts"])

@@ -1,7 +1,7 @@
 ## Interface: 30400
 ## Title: WrathRandomMounter
 ## Author: Tranzalore
-## Version: 1.1.3
+## Version: 1.1.4
 
 Lib\Mounts.lua
 
