@@ -154,7 +154,12 @@ local function UpdateMacro(groundMount, flyingMount, swimmingMount)
 
     local body = "#showtooltip " .. "\n/stopcasting" .. groundMountMacro .. swimmingMountMacro .. flyingMountMacro .. groundMountMacro2 .. "\n/WRM" .. "\n/dismount"
     --print (body)
-    EditMacro("Mount", "Mount", nil, body, 1, 1)
+    macroIndex = GetMacroIndexByName("Mount")
+    if macroIndex == 0 then
+      CreateMacro("Mount", "INV_MISC_QUESTIONMARK", body, nil)
+    else
+      EditMacro("Mount", "Mount", nil, body, 1, 1)
+    end
 end
 
 local function CheckIfItemInBags(item)
