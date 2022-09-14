@@ -241,8 +241,13 @@ local function UpdatePetMacro()
   --/WRP
   
   local pet = GetRandomPet()
-
-  local body = "#showtooltip " .. "\n/cast " .. pet .. "\n/WRP"
+  local body = nil
+  
+  if pet ~= nil then
+    body = "#showtooltip " .. "\n/cast " .. pet .. "\n/WRP"
+  else
+    body = "#showtooltip " .. "\n/WRP"
+  end
 
   --Save the macro
   macroIndex = GetMacroIndexByName("Pet")
