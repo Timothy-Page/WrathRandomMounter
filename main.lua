@@ -57,6 +57,7 @@ local myCurrentMountsCategories = {
   ["mySuperSwiftFlyingMountsCategories"] = {},
   ["mySwimmingMountsCategories"] = {}
 }
+local myPets = {}
 
 --Returns the number of elements in a table
 local function tablelength(T)
@@ -113,6 +114,20 @@ local function PrintMounts()
   end
 end
 
+local function PrintPets()
+  local petString = nil
+
+  for pet in pairs (myPets) do
+    petName = myPets[pet]
+    if petString == nil then
+      petString = tostring(petName)
+    else
+      petString = petString .. ", " .. tostring(petName)
+    end
+  end
+  print("Pets: " .. tostring(petString))
+end
+
 -- Returns a mount string that is of type mountType
 local function GetRandomMount(mountType)
   local mount
@@ -136,6 +151,20 @@ local function GetRandomMount(mountType)
   end
 
   return mount
+end
+
+-- Returns a pet string
+local function GetRandomPet()
+  local pet
+
+  --Randomly pick a pet
+  local numberOfPets = tablelength(myPets)
+  if numberOfPets > 0 then
+    local petID = math.random(numberOfPets)
+    pet = myPets[petID]
+  end
+
+  return pet
 end
 
 local function GetRandomMounts()
@@ -205,6 +234,25 @@ local function UpdateMacro(groundMount, flyingMount, swimmingMount)
     end
 end
 
+--Update ingame macro with the new pet
+local function UpdatePetMacro()
+  --#showtooltip
+  --/cast pet
+  --/WRP
+  
+  local pet = GetRandomPet()
+
+  local body = "#showtooltip " .. "\n/cast " .. pet .. "\n/WRP"
+
+  --Save the macro
+  macroIndex = GetMacroIndexByName("Pet")
+  if macroIndex == 0 then
+    CreateMacro("Pet", "INV_MISC_QUESTIONMARK", body, nil)
+  else
+    EditMacro("Pet", "Pet", nil, body, 1, 1)
+  end
+end
+
 --Check if table contains element
 local function tableContains(table, element)
   for _, value in pairs(table) do
@@ -272,6 +320,52 @@ local function RecordMountCategories(mountTable, categoryTable)
     for mountCategory, mounts in pairs(mountTable["mySwimmingMounts"]) do
       table.insert(categoryTable["mySwimmingMountsCategories"], mountCategory)
     end
+end
+
+--Updates the pet tables based on the companion API
+local function UpdateMyPets()
+  myPets = {}
+
+  -- Get pets from the companion API
+  PetsKnown = {} --Stores the API pets
+  CompanionType = "CRITTER"
+  numPets = GetNumCompanions(CompanionType) --total number of API pets
+  petCounter = 1 --loop counter
+  while petCounter <= numPets do
+    creatureID, creatureName, creatureSpellID, icon, issummoned, petType = GetCompanionInfo(CompanionType, petCounter)
+    if inDebugMode then
+      --print("PetSpellID: " .. creatureSpellID)
+      --print("PetName: " .. creatureName)
+    end
+    table.insert(PetsKnown, creatureSpellID)
+    petCounter = petCounter + 1
+  end
+
+  -- Get additional pet data from Pets.lua
+  for pet in pairs(PetsKnown) do --Loop over all possible pets from Pets.lua
+    --1:PetName, 2:PetCategory
+    Pet = WrathRandomMounter.itemPets[tostring(PetsKnown[pet])] --Table off all the pet data
+    if inDebugMode then
+      print("Pet: " .. tostring(PetsKnown[pet]))
+      print("Pet Table: " .. tostring(Pet))
+    end
+
+    if Pet ~= nil then
+      SpellID = pet
+      PetName = Pet[1]
+      PetCategory = Pet[2]
+    
+      if inDebugMode then
+        print("Petnaem: " .. tostring(PetName))
+      end
+
+      table.insert(myPets, PetName)
+    end
+  end
+
+  if inDebugMode then
+    PrintPets()
+  end
 end
 
 --Updates the mount tables based on the companion API
@@ -395,11 +489,12 @@ local function InitialStartup(self, event, ...)
   UpdateMyMounts() --Update mount table with current mounts
   local groundMount, flyingMount, swimmingMount = GetRandomMounts() --Get random Mounts
   UpdateMacro(groundMount, flyingMount, swimmingMount) --Update macro with random Mounts
+  UpdateMyPets()
+  UpdatePetMacro()
 end
 
 --Handles the entering world event
 local function InitialStartupHandler(self, event, ...)
-  print("InitialStartup Event: " .. event)
   InitialStartup(self, event, ...) --Gets the addon into a usable state
   wrm_wait(10, InitialStartup, self, event, ...) --Reruns startup incase parts of the API had not started yet (Updating Macros can fail if called too early)
 end
@@ -441,11 +536,9 @@ local function WRPHandler(parameter)
     
   if(string.len(parameter) > 0) then --If a parameter was supplied
     if parameter == "list" then
-      --PrintPets() --Prints players mounts to console
-      print("Pets : " .. "ToDo")
+      PrintPets() --Prints players mounts to console
     elseif parameter == "update" then
-      --InitialStartupHandler() --Rerun Startup to capture new pets
-      print("Update Pets ToDo")
+      UpdateMyPets() --Rerun Startup to capture new pets
     elseif parameter == "debug" then
       inDebugMode = not inDebugMode --Change the debug state of the addon
       print('DebugMode Changed to: ' .. tostring(inDebugMode))
@@ -454,9 +547,7 @@ local function WRPHandler(parameter)
       print('Accepted Parameters are: "list", "update", "debug"')
     end
   else --If no parameter was supplied update macro with new random pets
-    --local pet = GetRandomPets()
-    --wrm_wait(0.1, UpdateMacro, groundMount, flyingMount, swimmingMount)
-    print("Update pet macro")
+    wrm_wait(0.1, UpdatePetMacro)
   end
 
   if inDebugMode then
