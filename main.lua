@@ -235,26 +235,28 @@ local function UpdateMacro(groundMount, flyingMount, swimmingMount)
 end
 
 --Update ingame macro with the new pet
-local function UpdatePetMacro()
+local function UpdatePetMacro(forceUpdate)
   --#showtooltip
   --/cast pet
   --/WRP
-  
-  local pet = GetRandomPet()
-  local body = nil
-  
-  if pet ~= nil then
-    body = "#showtooltip " .. "\n/cast " .. pet .. "\n/WRP"
-  else
-    body = "#showtooltip " .. "\n/WRP"
-  end
 
-  --Save the macro
-  macroIndex = GetMacroIndexByName("Pet")
-  if macroIndex == 0 then
-    CreateMacro("Pet", "INV_MISC_QUESTIONMARK", body, nil)
-  else
-    EditMacro("Pet", "Pet", nil, body, 1, 1)
+  if not inCombat then
+    local pet = GetRandomPet()
+    local body = nil
+    
+    if pet ~= nil then
+      body = "#showtooltip " .. "\n/cast " .. pet .. "\n/WRP"
+    else
+      body = "#showtooltip " .. "\n/WRP"
+    end
+  
+    --Save the macro
+    macroIndex = GetMacroIndexByName("Pet")
+    if macroIndex == 0 then
+      CreateMacro("Pet", "INV_MISC_QUESTIONMARK", body, nil)
+    else
+      EditMacro("Pet", "Pet", nil, body, 1, 1)
+    end
   end
 end
 
@@ -488,27 +490,26 @@ local function GetCurrentZoneCategory()
   return zoneCategory
 end
 
+local function UpdateMountMacro(forceUpdate)
+  local groundMount, flyingMount, swimmingMount = GetRandomMounts()
+  if (not IsMounted() or forceUpdate) and not inCombat then --Only update macro if player is not mounted and delay by 0.1s so macro is not being updated while it is being run.
+    UpdateMacro(groundMount, flyingMount, swimmingMount)
+  end
+end
+
 --Gets mounts and updates macro when addon is loaded.
 local function InitialStartup(self, event, ...)
   CurrentZoneCategory = GetCurrentZoneCategory()
   UpdateMyMounts() --Update mount table with current mounts
-  local groundMount, flyingMount, swimmingMount = GetRandomMounts() --Get random Mounts
-  UpdateMacro(groundMount, flyingMount, swimmingMount) --Update macro with random Mounts
+  UpdateMountMacro(true)
   UpdateMyPets()
-  UpdatePetMacro()
+  UpdatePetMacro(true)
 end
 
 --Handles the entering world event
 local function InitialStartupHandler(self, event, ...)
   InitialStartup(self, event, ...) --Gets the addon into a usable state
   wrm_wait(10, InitialStartup, self, event, ...) --Reruns startup incase parts of the API had not started yet (Updating Macros can fail if called too early)
-end
-
-local function UpdateMountMacro()
-  local groundMount, flyingMount, swimmingMount = GetRandomMounts()
-  if IsMounted() == false then --Only update macro if player is not mounted and delay by 0.1s so macro is not being updated while it is being run.
-    UpdateMacro(groundMount, flyingMount, swimmingMount)
-  end
 end
 
 --Captures console commands that are entered
@@ -552,7 +553,7 @@ local function WRPHandler(parameter)
       print('Accepted Parameters are: "list", "update", "debug"')
     end
   else --If no parameter was supplied update macro with new random pets
-    wrm_wait(0.1, UpdatePetMacro)
+    wrm_wait(0.1, UpdatePetMacro, false)
   end
 
   if inDebugMode then
@@ -582,6 +583,10 @@ local function ZoneChangeHandler(self, event, ...)
   end
 end
 
+local function CombatChangeHandler(self, event, ...)
+  inCombat = InCombatLockdown()
+end
+
 -- Initilize addon when entering world
 local EnterWorldFrame = CreateFrame("Frame")
 EnterWorldFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -591,6 +596,12 @@ EnterWorldFrame:SetScript("OnEvent", InitialStartupHandler)
 local ChangeZoneFrame = CreateFrame("Frame")
 ChangeZoneFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 ChangeZoneFrame:SetScript("OnEvent", ZoneChangeHandler)
+
+-- Update player zone
+local ChangedCombatFrame = CreateFrame("Frame")
+ChangedCombatFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+ChangedCombatFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+ChangedCombatFrame:SetScript("OnEvent", CombatChangeHandler)
 
 -- Register slash commands
 SlashCmdList["WRM"] = WRMHandler;
