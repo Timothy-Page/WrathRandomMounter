@@ -7,6 +7,7 @@ local inDebugMode = false
 local mounted = IsMounted()
 local inCombat = InCombatLockdown()
 local CurrentZoneCategory = 'None'
+local ridingSkill = 0
 
 local myMounts = {
   ["myGroundMounts"] = {},
@@ -64,6 +65,20 @@ local function tablelength(T)
     local count = 0
     for _ in pairs(T) do count = count + 1 end
     return count
+end
+
+local function GetRidingSkill()
+  for skillIndex = 1, GetNumSkillLines() do
+    local skillName, isHeader, isExpanded, skillRank, numTempPoints, skillModifier,
+      skillMaxRank, isAbandonable, stepCost, rankCost, minLevel, skillCostType,
+      skillDescription = GetSkillLineInfo(skillIndex)
+    if skillName == 'Riding' then
+      ridingSkill = skillRank
+      if inDebugMode then
+        print(string.format("Skill: %s - %s", skillName, skillRank))
+      end
+    end
+  end
 end
 
 --Create delay function
@@ -396,6 +411,7 @@ local function UpdateMyMounts()
   -- Get additional mount data from Mounts.lua
   for mount in pairs(WrathRandomMounter.itemMounts) do --Loop over all possible mounts from Mounts.lua
     --2:SpellID, 4:MaxSpeed, 5:MinSpeed, 6:SwimSpeed, 7:Category, 9:NormalMount, 10:AQMount
+    --ridingSkill 75:0.6, 150:1, 225:1.5, 300:2.8, 375:3.1
     Mount = WrathRandomMounter.itemMounts[mount] --Table off all the mount data
     SpellID = Mount[2]
     MaxSpeed = Mount[4]
@@ -406,7 +422,7 @@ local function UpdateMyMounts()
     AQMount = Mount[10]
 
     if tableContains(MountsKnown, SpellID) then --Check if player has mount
-      if MinSpeed <= 1 then --Ground Mount
+      if MinSpeed <= 1 and ridingSkill >= 75 then --Ground Mount
         if NormalMount == 1 then
           AddMountMyMounts("myGroundMounts", Category, Mount, myMounts)
         end
@@ -414,7 +430,7 @@ local function UpdateMyMounts()
           AddMountMyMounts("myGroundMounts", Category, Mount, myAQMounts)
         end
       end
-      if MinSpeed <= 1 and MaxSpeed >=1 then --SwiftGround Mount
+      if (MinSpeed <= 1 and MaxSpeed >=1) and ridingSkill >= 150 then --SwiftGround Mount
         if NormalMount == 1 then
           AddMountMyMounts("mySwiftGroundMounts", Category, Mount, myMounts)
         end
@@ -422,7 +438,7 @@ local function UpdateMyMounts()
           AddMountMyMounts("mySwiftGroundMounts", Category, Mount, myAQMounts)
         end
       end
-      if MaxSpeed > 1 then --Flying Mount
+      if MaxSpeed > 1 and ridingSkill >= 225 then --Flying Mount
         if NormalMount == 1 then
           AddMountMyMounts("myFlyingMounts", Category, Mount, myMounts)
         end
@@ -430,7 +446,7 @@ local function UpdateMyMounts()
           AddMountMyMounts("myFlyingMounts", Category, Mount, myAQMounts)
         end
       end
-      if MinSpeed <= 2.8 and MaxSpeed >= 2.8 then --Swift Flying Mount
+      if (MinSpeed <= 2.8 and MaxSpeed >= 2.8) and ridingSkill >= 300 then --Swift Flying Mount
         if NormalMount == 1 then
           AddMountMyMounts("mySwiftFlyingMounts", Category, Mount, myMounts)
         end
@@ -438,7 +454,7 @@ local function UpdateMyMounts()
           AddMountMyMounts("mySwiftFlyingMounts", Category, Mount, myAQMounts)
         end
       end
-      if MaxSpeed > 2.8 then --Super Swift Flying Mount
+      if MaxSpeed >= 2.8 and ridingSkill >= 375 then --Super Swift Flying Mount
         if NormalMount == 1 then
           AddMountMyMounts("mySuperSwiftFlyingMounts", Category, Mount, myMounts)
         end
@@ -500,6 +516,7 @@ end
 --Gets mounts and updates macro when addon is loaded.
 local function InitialStartup(self, event, ...)
   CurrentZoneCategory = GetCurrentZoneCategory()
+  GetRidingSkill()
   UpdateMyMounts() --Update mount table with current mounts
   UpdateMountMacro(true)
   UpdateMyPets()
@@ -530,7 +547,7 @@ local function WRMHandler(parameter)
       print('Accepted Parameters are: "list", "update", "debug", "zone"')
     end
   else --If no parameter was supplied update macro with new random mounts
-    wrm_wait(0.1, UpdateMountMacro)
+    wrm_wait(0.1, UpdateMountMacro, false)
   end
 
   if inDebugMode then
@@ -575,7 +592,7 @@ local function ZoneChangeHandler(self, event, ...)
       myCurrentMounts = myMounts
       myCurrentMountsCategories = myMountsCategories
     end
-    UpdateMountMacro()
+    UpdateMountMacro(false)
   end
   
   if inDebugMode then
