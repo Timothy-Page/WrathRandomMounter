@@ -482,7 +482,7 @@ local function UpdateMyMounts()
         if NormalMount == 1 then
           AddMountMyMounts("mySuperSwiftFlyingMounts", Category, Mount, myMounts)
         end
-        if AQMount == 1 NormalMount == 1 then
+        if AQMount == 1 or NormalMount == 1 then
           AddMountMyMounts("mySuperSwiftFlyingMounts", Category, Mount, myAQMounts)
         end
       end
