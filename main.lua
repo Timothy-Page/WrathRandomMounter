@@ -60,6 +60,16 @@ local myCurrentMountsCategories = {
 }
 local myPets = {}
 
+--Get Localized Mount Names
+local function LocalizeMountName()
+  for mount in pairs(WrathRandomMounter.itemMounts) do --Loop over all possible mounts from Mounts.lua
+    --1:Name, 2:SpellID, 4:MaxSpeed, 5:MinSpeed, 6:SwimSpeed, 7:Category, 9:NormalMount, 10:AQMount
+    --ridingSkill 75:0.6, 150:1, 225:1.5, 300:2.8, 375:3.1
+    name, rank, icon, castTime, minRange, maxRange, spellID, originalIcon = GetSpellInfo(WrathRandomMounter.itemMounts[mount][2])
+    WrathRandomMounter.itemMounts[mount][1] = name
+  end
+end
+
 --Returns the number of elements in a table
 local function tablelength(T)
     local count = 0
@@ -68,17 +78,20 @@ local function tablelength(T)
 end
 
 local function GetRidingSkill()
-  for skillIndex = 1, GetNumSkillLines() do
-    local skillName, isHeader, isExpanded, skillRank, numTempPoints, skillModifier,
-      skillMaxRank, isAbandonable, stepCost, rankCost, minLevel, skillCostType,
-      skillDescription = GetSkillLineInfo(skillIndex)
-    if skillName == 'Riding' then
-      ridingSkill = skillRank
-      if inDebugMode then
-        print(string.format("Skill: %s - %s", skillName, skillRank))
-      end
-    end
+  --ridingSkill 75:0.6, 150:1, 225:1.5, 300:2.8, 375:3.1
+  if IsPlayerSpell(33388, false) then--75
+    ridingSkill = 75
   end
+  if IsPlayerSpell(33391, false) then--150
+    ridingSkill = 150
+  end
+  if IsPlayerSpell(34090, false) then--225
+    ridingSkill = 225
+  end
+  if IsPlayerSpell(34091, false) then--300
+    ridingSkill = 300
+  end
+  print("RidingSkill: " .. tostring(ridingSkill))
 end
 
 --Create delay function
@@ -359,30 +372,38 @@ local function UpdateMyPets()
       --print("PetSpellID: " .. creatureSpellID)
       --print("PetName: " .. creatureName)
     end
-    table.insert(PetsKnown, creatureSpellID)
+    table.insert(PetsKnown, {creatureSpellID, creatureName})
     petCounter = petCounter + 1
   end
 
   -- Get additional pet data from Pets.lua
   for pet in pairs(PetsKnown) do --Loop over all possible pets from Pets.lua
     --1:PetName, 2:PetCategory
-    Pet = WrathRandomMounter.itemPets[tostring(PetsKnown[pet])] --Table off all the pet data
+    Pet = WrathRandomMounter.itemPets[tostring(PetsKnown[pet][1])] --Table off all the pet data
     if inDebugMode then
-      print("Pet: " .. tostring(PetsKnown[pet]))
+      print("Pet: " .. tostring(PetsKnown[pet][1] .. ", " .. tostring(PetsKnown[pet][2])))
       print("Pet Table: " .. tostring(Pet))
     end
 
+    
+    SpellID = nil
+    PetName = nil
+    PetCategory = nil
     if Pet ~= nil then
       SpellID = pet
       PetName = Pet[1]
       PetCategory = Pet[2]
-    
-      if inDebugMode then
-        print("Petnaem: " .. tostring(PetName))
-      end
-
-      table.insert(myPets, PetName)
+    else
+      SpellID = PetsKnown[pet][1]
+      PetName = PetsKnown[pet][2]
+      PetCategory = "None"
     end
+    
+    if inDebugMode then
+      print("Petnaem: " .. tostring(PetName))
+    end
+
+    table.insert(myPets, PetName)
   end
 
   if inDebugMode then
@@ -422,11 +443,14 @@ local function UpdateMyMounts()
     AQMount = Mount[10]
 
     if tableContains(MountsKnown, SpellID) then --Check if player has mount
+      --print("SpellID: " .. SpellID)
+      --print("RidingSkill: " .. ridingSkill)
       if MinSpeed <= 1 and ridingSkill >= 75 then --Ground Mount
         if NormalMount == 1 then
+          --print("Ground Mount: " .. Category .. ", " .. Mount[1])
           AddMountMyMounts("myGroundMounts", Category, Mount, myMounts)
         end
-        if AQMount == 1 then
+        if AQMount == 1 or NormalMount == 1 then
           AddMountMyMounts("myGroundMounts", Category, Mount, myAQMounts)
         end
       end
@@ -434,7 +458,7 @@ local function UpdateMyMounts()
         if NormalMount == 1 then
           AddMountMyMounts("mySwiftGroundMounts", Category, Mount, myMounts)
         end
-        if AQMount == 1 then
+        if AQMount == 1 or NormalMount == 1 then
           AddMountMyMounts("mySwiftGroundMounts", Category, Mount, myAQMounts)
         end
       end
@@ -442,7 +466,7 @@ local function UpdateMyMounts()
         if NormalMount == 1 then
           AddMountMyMounts("myFlyingMounts", Category, Mount, myMounts)
         end
-        if AQMount == 1 then
+        if AQMount == 1 or NormalMount == 1 then
           AddMountMyMounts("myFlyingMounts", Category, Mount, myAQMounts)
         end
       end
@@ -450,15 +474,15 @@ local function UpdateMyMounts()
         if NormalMount == 1 then
           AddMountMyMounts("mySwiftFlyingMounts", Category, Mount, myMounts)
         end
-        if AQMount == 1 then
+        if AQMount == 1 or NormalMount == 1 then
           AddMountMyMounts("mySwiftFlyingMounts", Category, Mount, myAQMounts)
         end
       end
-      if MaxSpeed >= 2.8 and ridingSkill >= 375 then --Super Swift Flying Mount
+      if MaxSpeed >= 2.8 and ridingSkill >= 300 then --Super Swift Flying Mount
         if NormalMount == 1 then
           AddMountMyMounts("mySuperSwiftFlyingMounts", Category, Mount, myMounts)
         end
-        if AQMount == 1 then
+        if AQMount == 1 NormalMount == 1 then
           AddMountMyMounts("mySuperSwiftFlyingMounts", Category, Mount, myAQMounts)
         end
       end
@@ -466,7 +490,7 @@ local function UpdateMyMounts()
         if NormalMount == 1 then
           AddMountMyMounts("mySwimmingMounts", Category, Mount, myMounts)
         end
-        if AQMount == 1 then
+        if AQMount == 1 or NormalMount == 1 then
           AddMountMyMounts("mySwimmingMounts", Category, Mount, myAQMounts)
         end
       end
@@ -517,6 +541,7 @@ end
 local function InitialStartup(self, event, ...)
   CurrentZoneCategory = GetCurrentZoneCategory()
   GetRidingSkill()
+  LocalizeMountName()
   UpdateMyMounts() --Update mount table with current mounts
   UpdateMountMacro(true)
   UpdateMyPets()
