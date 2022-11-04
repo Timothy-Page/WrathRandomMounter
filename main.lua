@@ -4,8 +4,8 @@ SLASH_WRM1 = "/WRM"
 SLASH_WRP1 = "/WRP"
 local inDebugMode = false
 
-local mounted = IsMounted()
-local inCombat = InCombatLockdown()
+local mounted = IsMounted -- make a local copy of the function and not the result of one execution
+local inCombat = InCombatLockdown -- make a local copy of the function and not the result of one execution
 local CurrentZoneCategory = 'None'
 local ridingSkill = 0
 
@@ -271,7 +271,7 @@ local function UpdatePetMacro(forceUpdate)
   --/cast pet
   --/WRP
 
-  if not inCombat then
+  if not inCombat() then
     local pet = GetRandomPet()
     local body = nil
     
@@ -535,7 +535,7 @@ end
 
 local function UpdateMountMacro(forceUpdate)
   local groundMount, flyingMount, swimmingMount = GetRandomMounts()
-  if (not IsMounted() or forceUpdate) and not inCombat then --Only update macro if player is not mounted and delay by 0.1s so macro is not being updated while it is being run.
+  if (not IsMounted() or forceUpdate) and not inCombat() then --Only update macro if player is not mounted and delay by 0.1s so macro is not being updated while it is being run.
     UpdateMacro(groundMount, flyingMount, swimmingMount)
   end
 end
@@ -628,9 +628,6 @@ local function ZoneChangeHandler(self, event, ...)
   end
 end
 
-local function CombatChangeHandler(self, event, ...)
-  inCombat = InCombatLockdown()
-end
 
 -- Initilize addon when entering world
 local EnterWorldFrame = CreateFrame("Frame")
@@ -642,11 +639,6 @@ local ChangeZoneFrame = CreateFrame("Frame")
 ChangeZoneFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 ChangeZoneFrame:SetScript("OnEvent", ZoneChangeHandler)
 
--- Update player zone
-local ChangedCombatFrame = CreateFrame("Frame")
-ChangedCombatFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
-ChangedCombatFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-ChangedCombatFrame:SetScript("OnEvent", CombatChangeHandler)
 
 -- Register slash commands
 SlashCmdList["WRM"] = WRMHandler;
