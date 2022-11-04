@@ -91,7 +91,10 @@ local function GetRidingSkill()
   if IsPlayerSpell(34091, false) then--300
     ridingSkill = 300
   end
-  print("RidingSkill: " .. tostring(ridingSkill))
+
+  if inDebugMode then
+    print("RidingSkill: " .. tostring(ridingSkill))
+  end
 end
 
 --Create delay function
