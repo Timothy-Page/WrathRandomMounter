@@ -315,5 +315,6 @@ WrathRandomMounter.itemMounts = {
     ["348459 - 184865"] ={"Reawakened Phase-Hunter", 348459, 184865, 1, 1, 0, "Warp Stalker", "Store", 1, 0},
     ["372677 - 192455"] ={"Kalu'ak Whalebone Glider", 372677, 192455, 2.8, 0.6, 0, "Glider", "Store", 1, 0},
     ["387320 - 198630"] ={"Blazing Hippogryph", 387320, 198630, 1.5, 1.5, 0, "Hippogryph", "TCG", 1, 0},
-    ["387321 - 198633"] ={"Wooly White Rhino", 387321, 198633, 1, 1, 0, "Rhino", "TCG", 1, 0}
+    ["387321 - 198633"] ={"Wooly White Rhino", 387321, 198633, 1, 1, 0, "Rhino", "TCG", 1, 0},
+    ["394209 - 201699"] ={"Festering Emerald Drake", 394209, 201699, 2.8, 2.8, 0, "Drake", "Subscription", 1, 0}
 }
