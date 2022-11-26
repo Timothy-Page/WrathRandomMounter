@@ -9,55 +9,55 @@ local inCombat = InCombatLockdown -- make a local copy of the function and not t
 local CurrentZoneCategory = 'None'
 local ridingSkill = 0
 
-local myMounts = {
+--Variables to store player mounts
+local function GenerateBlankMountTable()
+  mountTable = {
   ["myGroundMounts"] = {},
   ["mySwiftGroundMounts"] = {},
   ["myFlyingMounts"] = {},
   ["mySwiftFlyingMounts"] = {},
   ["mySuperSwiftFlyingMounts"] = {},
   ["mySwimmingMounts"] = {}
+  }
+  return mountTable
+end
+local myMountSets = {
+  ["myMounts"] = GenerateBlankMountTable(),
+  ["myAQMounts"] = GenerateBlankMountTable()
 }
-local myAQMounts = {
-  ["myGroundMounts"] = {},
-  ["mySwiftGroundMounts"] = {},
-  ["myFlyingMounts"] = {},
-  ["mySwiftFlyingMounts"] = {},
-  ["mySuperSwiftFlyingMounts"] = {},
-  ["mySwimmingMounts"] = {}
-}
-local myCurrentMounts = {
-  ["myGroundMounts"] = {},
-  ["mySwiftGroundMounts"] = {},
-  ["myFlyingMounts"] = {},
-  ["mySwiftFlyingMounts"] = {},
-  ["mySuperSwiftFlyingMounts"] = {},
-  ["mySwimmingMounts"] = {}
-}
+local myCurrentMounts = GenerateBlankMountTable() --Currently active mount set
+AllMounts = {}
+--SavedMountWeights = {
+--  ["Festering Emerald Drake"] = 0,
+--  ["Kalu'ak Whalebone Glider"] = 0,
+--  ["Reawakened Phase-Hunter"] = 0
+--}
 
-local myMountsCategories = {
+--mySuperSwiftFlyingMountsCategories
+--Variables to store player mount categories
+local function GenerateBlankMountCategoriesTable()
+  mountCategoriesTable = {
   ["myGroundMountsCategories"] = {},
   ["mySwiftGroundMountsCategories"] = {},
   ["myFlyingMountsCategories"] = {},
   ["mySwiftFlyingMountsCategories"] = {},
   ["mySuperSwiftFlyingMountsCategories"] = {},
   ["mySwimmingMountsCategories"] = {}
+  }
+  return mountCategoriesTable
+end
+local myMountsCategoriesSets = {
+  ["myMountsCategories"] = GenerateBlankMountCategoriesTable(),
+  ["myAQMountsCategories"] = GenerateBlankMountCategoriesTable()
 }
-local myAQMountsCategories = {
-  ["myGroundMountsCategories"] = {},
-  ["mySwiftGroundMountsCategories"] = {},
-  ["myFlyingMountsCategories"] = {},
-  ["mySwiftFlyingMountsCategories"] = {},
-  ["mySuperSwiftFlyingMountsCategories"] = {},
-  ["mySwimmingMountsCategories"] = {}
-}
-local myCurrentMountsCategories = {
-  ["myGroundMountsCategories"] = {},
-  ["mySwiftGroundMountsCategories"] = {},
-  ["myFlyingMountsCategories"] = {},
-  ["mySwiftFlyingMountsCategories"] = {},
-  ["mySuperSwiftFlyingMountsCategories"] = {},
-  ["mySwimmingMountsCategories"] = {}
-}
+local myCurrentMountsCategories = GenerateBlankMountCategoriesTable() --Categories of mounts in "myCurrentMounts"
+AllMountCategories = {}
+--SavedMountCategoriesWeights = {
+--  ["Glider"] = 0,
+--  ["Warp Stalker"] = 0
+--}
+
+--Variables to store player pets
 local myPets = {}
 
 --Get Localized Mount Names
@@ -129,19 +129,45 @@ function wrm_wait(delay, func, ...)
   return true;
 end
 
+--local function PrintMounts()
+--  for mountType in pairs (myCurrentMounts) do
+--    local mountString = nil
+--    for mountCategory in pairs(myCurrentMounts[mountType]) do
+--      for mount in pairs(myCurrentMounts[mountType][mountCategory]) do
+--        if mountString == nil then
+--          mountString = myCurrentMounts[mountType][mountCategory][mount][1]
+--        else
+--          mountString = mountString .. ", " .. myCurrentMounts[mountType][mountCategory][mount][1]
+--        end
+--      end
+--    end
+--    print(mountType .. ": " .. tostring(mountString))
+--  end
+--end
+
 local function PrintMounts()
-  for mountType in pairs (myCurrentMounts) do
-    local mountString = nil
-    for mountCategory in pairs(myCurrentMounts[mountType]) do
-      for mount in pairs(myCurrentMounts[mountType][mountCategory]) do
-        if mountString == nil then
-          mountString = myCurrentMounts[mountType][mountCategory][mount][1]
-        else
-          mountString = mountString .. ", " .. myCurrentMounts[mountType][mountCategory][mount][1]
-        end
-      end
-    end
-    print(mountType .. ": " .. tostring(mountString))
+  orderedMounts = {}
+  for mountName in pairs(AllMounts) do
+    table.insert(orderedMounts, mountName)
+  end
+  table.sort(orderedMounts)
+
+  print("Mounts...")
+  for mountOrderID in pairs(orderedMounts) do
+    print(orderedMounts[mountOrderID] .. ": " .. tostring(AllMounts[orderedMounts[mountOrderID]]))
+  end
+end
+
+local function PrintCategories()
+  orderedCategories = {}
+  for categoryName in pairs(AllMountCategories) do
+    table.insert(orderedCategories, categoryName)
+  end
+  table.sort(orderedCategories)
+
+  print("MountCategories...")
+  for categoryorderID in pairs(orderedCategories) do
+    print(orderedCategories[categoryorderID] .. ": " .. tostring(AllMountCategories[orderedCategories[categoryorderID]]))
   end
 end
 
@@ -165,19 +191,26 @@ local function GetRandomMount(mountType)
   local mountTypeCategory = mountType .. "Categories"
 
   --Randomly pick a mount category
-  local numberOfCategories = tablelength(myCurrentMounts[mountType])
+  local numberOfCategories = tablelength(myCurrentMountsCategories[mountTypeCategory])
   if numberOfCategories > 0 then
     local CategoryId = math.random(numberOfCategories)
     local CategoryName = nil
 
     --Get the category string
     CategoryName = myCurrentMountsCategories[mountTypeCategory][CategoryId]
-    
+
+    mountList = {}
+    for mountKey, mount in pairs(myCurrentMounts[mountType][CategoryName]) do
+      if AllMounts[mount[1]] == 1 then
+        table.insert(mountList, mount[1])
+      end
+    end
+
     --Randomly pick a mount from the category
-    local numberOfMounts = tablelength(myCurrentMounts[mountType][CategoryName])
+    local numberOfMounts = tablelength(mountList)
     if numberOfMounts > 0 then
       local mountID = math.random(numberOfMounts)
-      mount = myCurrentMounts[mountType][CategoryName][mountID][1]
+      mount = mountList[mountID]
     end
   end
 
@@ -310,53 +343,68 @@ local function AddMountMyMounts(type, category, mount, mountTable)
   end
 end
 
---Used to reset mount table when updating mounts
-local function BlankMountTable()
-  mountTable = {
-    ["myGroundMounts"] = {},
-    ["mySwiftGroundMounts"] = {},
-    ["myFlyingMounts"] = {},
-    ["mySwiftFlyingMounts"] = {},
-    ["mySuperSwiftFlyingMounts"] = {},
-    ["mySwimmingMounts"] = {}
-  }
-
-  return mountTable
+local function GetAllMounts(mountTable, mountList)
+  for mountType in pairs(myCurrentMounts) do
+    for category in pairs(myCurrentMounts[mountType]) do
+      for mount in pairs(myCurrentMounts[mountType][category]) do
+        mountName = myCurrentMounts[mountType][category][mount][1]
+        if mountList[mountName] == nil then
+          if SavedMountWeights[mountName] == nil then
+            mountList[mountName] = 1
+          else
+            mountList[mountName] = SavedMountWeights[mountName]
+          end
+        end
+      end
+    end
+  end
 end
 
---Used to reset mount category table when updating mounts
-local function BlankMountCategoryTable()
-  mountCategoryTable = {
-    ["myGroundMountsCategories"] = {},
-    ["mySwiftGroundMountsCategories"] = {},
-    ["myFlyingMountsCategories"] = {},
-    ["mySwiftFlyingMountsCategories"] = {},
-    ["mySuperSwiftFlyingMountsCategories"] = {},
-    ["mySwimmingMountsCategories"] = {}
-  }
-
-  return mountCategoryTable
+local function GetAllMountCategories(mountTable, categoryList)
+  for mountType in pairs(myCurrentMounts) do
+    for category in pairs(myCurrentMounts[mountType]) do
+      if categoryList[category] == nil then
+        if SavedMountCategoriesWeights[category] == nil then
+          categoryList[category] = 1
+        else
+          categoryList[category] = SavedMountCategoriesWeights[category]
+        end
+      end
+    end
+  end
 end
 
 local function RecordMountCategories(mountTable, categoryTable)
     --Put Categories into categoryTable
     for mountCategory, mounts in pairs(mountTable["myGroundMounts"]) do
-      table.insert(categoryTable["myGroundMountsCategories"], mountCategory)
+      if AllMountCategories[mountCategory] ~= 0 then
+        table.insert(categoryTable["myGroundMountsCategories"], mountCategory)
+      end
     end
     for mountCategory, mounts in pairs(mountTable["mySwiftGroundMounts"]) do
-      table.insert(categoryTable["mySwiftGroundMountsCategories"], mountCategory)
+      if AllMountCategories[mountCategory] ~= 0 then
+        table.insert(categoryTable["mySwiftGroundMountsCategories"], mountCategory)
+      end
     end
     for mountCategory, mounts in pairs(mountTable["myFlyingMounts"]) do
-      table.insert(categoryTable["myFlyingMountsCategories"], mountCategory)
+      if AllMountCategories[mountCategory] ~= 0 then
+        table.insert(categoryTable["myFlyingMountsCategories"], mountCategory)
+      end
     end
     for mountCategory, mounts in pairs(mountTable["mySwiftFlyingMounts"]) do
-      table.insert(categoryTable["mySwiftFlyingMountsCategories"], mountCategory)
+      if AllMountCategories[mountCategory] ~= 0 then
+        table.insert(categoryTable["mySwiftFlyingMountsCategories"], mountCategory)
+      end
     end
     for mountCategory, mounts in pairs(mountTable["mySuperSwiftFlyingMounts"]) do
-      table.insert(categoryTable["mySuperSwiftFlyingMountsCategories"], mountCategory)
+      if AllMountCategories[mountCategory] ~= 0 then
+        table.insert(categoryTable["mySuperSwiftFlyingMountsCategories"], mountCategory)
+      end
     end
     for mountCategory, mounts in pairs(mountTable["mySwimmingMounts"]) do
-      table.insert(categoryTable["mySwimmingMountsCategories"], mountCategory)
+      if AllMountCategories[mountCategory] ~= 0 then
+        table.insert(categoryTable["mySwimmingMountsCategories"], mountCategory)
+      end
     end
 end
 
@@ -416,10 +464,10 @@ end
 
 --Updates the mount tables based on the companion API
 local function UpdateMyMounts()
-  myMounts = BlankMountTable()
-  myAQMounts = BlankMountTable()
-  myMountsCategories = BlankMountCategoryTable()
-  myAQMountsCategories = BlankMountCategoryTable()
+  myMountSets["myMounts"] = GenerateBlankMountTable()
+  myMountSets["myAQMounts"] = GenerateBlankMountTable()
+  myMountsCategoriesSets["myMountsCategories"] = GenerateBlankMountCategoriesTable()
+  myMountsCategoriesSets["myAQMountsCategories"] = GenerateBlankMountCategoriesTable()
 
   -- Get mounts from the companion API
   MountsKnown = {} --Stores the API mounts
@@ -432,7 +480,7 @@ local function UpdateMyMounts()
     mountCounter = mountCounter + 1
   end
 
-  -- Get additional mount data from Mounts.lua
+  -- Get additional mount data from Mounts.lua and put into myCurrentMounts
   for mount in pairs(WrathRandomMounter.itemMounts) do --Loop over all possible mounts from Mounts.lua
     --2:SpellID, 4:MaxSpeed, 5:MinSpeed, 6:SwimSpeed, 7:Category, 9:NormalMount, 10:AQMount
     --ridingSkill 75:0.6, 150:1, 225:1.5, 300:2.8, 375:3.1
@@ -444,73 +492,63 @@ local function UpdateMyMounts()
     Category = Mount[7]
     NormalMount = Mount[9]
     AQMount = Mount[10]
-
+    
     if tableContains(MountsKnown, SpellID) then --Check if player has mount
       --print("SpellID: " .. SpellID)
       --print("RidingSkill: " .. ridingSkill)
       if MinSpeed <= 1 and ridingSkill >= 75 then --Ground Mount
-        if NormalMount == 1 then
-          --print("Ground Mount: " .. Category .. ", " .. Mount[1])
-          AddMountMyMounts("myGroundMounts", Category, Mount, myMounts)
-        end
-        if AQMount == 1 or NormalMount == 1 then
-          AddMountMyMounts("myGroundMounts", Category, Mount, myAQMounts)
-        end
+        AddMountMyMounts("myGroundMounts", Category, Mount, myCurrentMounts)
       end
       if (MinSpeed <= 1 and MaxSpeed >=1) and ridingSkill >= 150 then --SwiftGround Mount
-        if NormalMount == 1 then
-          AddMountMyMounts("mySwiftGroundMounts", Category, Mount, myMounts)
-        end
-        if AQMount == 1 or NormalMount == 1 then
-          AddMountMyMounts("mySwiftGroundMounts", Category, Mount, myAQMounts)
-        end
+        AddMountMyMounts("mySwiftGroundMounts", Category, Mount, myCurrentMounts)
       end
       if MaxSpeed > 1 and ridingSkill >= 225 then --Flying Mount
-        if NormalMount == 1 then
-          AddMountMyMounts("myFlyingMounts", Category, Mount, myMounts)
-        end
-        if AQMount == 1 or NormalMount == 1 then
-          AddMountMyMounts("myFlyingMounts", Category, Mount, myAQMounts)
-        end
+        AddMountMyMounts("myFlyingMounts", Category, Mount, myCurrentMounts)
       end
       if (MinSpeed <= 2.8 and MaxSpeed >= 2.8) and ridingSkill >= 300 then --Swift Flying Mount
-        if NormalMount == 1 then
-          AddMountMyMounts("mySwiftFlyingMounts", Category, Mount, myMounts)
-        end
-        if AQMount == 1 or NormalMount == 1 then
-          AddMountMyMounts("mySwiftFlyingMounts", Category, Mount, myAQMounts)
-        end
+        AddMountMyMounts("mySwiftFlyingMounts", Category, Mount, myCurrentMounts)
       end
       if MaxSpeed >= 2.8 and ridingSkill >= 300 then --Super Swift Flying Mount
-        if NormalMount == 1 then
-          AddMountMyMounts("mySuperSwiftFlyingMounts", Category, Mount, myMounts)
-        end
-        if AQMount == 1 or NormalMount == 1 then
-          AddMountMyMounts("mySuperSwiftFlyingMounts", Category, Mount, myAQMounts)
-        end
+        AddMountMyMounts("mySuperSwiftFlyingMounts", Category, Mount, myCurrentMounts)
       end
       if SwimSpeed > 0 then -- Swimming Mount
-        if NormalMount == 1 then
-          AddMountMyMounts("mySwimmingMounts", Category, Mount, myMounts)
-        end
-        if AQMount == 1 or NormalMount == 1 then
-          AddMountMyMounts("mySwimmingMounts", Category, Mount, myAQMounts)
-        end
+        AddMountMyMounts("mySwimmingMounts", Category, Mount, myCurrentMounts)
       end
     end
   end
   
+  GetAllMounts(myCurrentMounts, AllMounts)
+  --Move Mounts from myCurrentMounts to separate Mount set
+  for MountType in pairs(myCurrentMounts) do
+    for Category in pairs(myCurrentMounts[MountType]) do
+      for mount in pairs(myCurrentMounts[MountType][Category]) do
+        Mount = myCurrentMounts[MountType][Category][mount]
+        SpellID = Mount[2]
+        NormalMount = Mount[9]
+        AQMount = Mount[10]
+        
+        if NormalMount == 1 then
+          AddMountMyMounts(MountType, Category, Mount, myMountSets["myMounts"])
+        end
+        if AQMount == 1 then
+          AddMountMyMounts(MountType, Category, Mount, myMountSets["myAQMounts"])
+        end
+      end
+    end
+  end
+
   --Put Categories into myCurrentMountsCategories
-  RecordMountCategories(myMounts, myMountsCategories)
-  RecordMountCategories(myAQMounts, myAQMountsCategories)
+  GetAllMountCategories(myCurrentMounts, AllMountCategories)
+  RecordMountCategories(myMountSets["myMounts"], myMountsCategoriesSets["myMountsCategories"])
+  RecordMountCategories(myMountSets["myAQMounts"], myMountsCategoriesSets["myAQMountsCategories"])
 
   --Update Current tables
   if CurrentZoneCategory == "Ahn'Qiraj" then
-    myCurrentMounts = myAQMounts
-    myCurrentMountsCategories = myAQMountsCategories
+    myCurrentMounts = myMountSets["myAQMounts"]
+    myCurrentMountsCategories = myMountsCategoriesSets["myAQMountsCategories"]
   else
-    myCurrentMounts = myMounts
-    myCurrentMountsCategories = myMountsCategories
+    myCurrentMounts = myMountSets["myMounts"]
+    myCurrentMountsCategories = myMountsCategoriesSets["myMountsCategories"]
   end
 
   if inDebugMode then
@@ -551,18 +589,62 @@ local function InitialStartup(self, event, ...)
   UpdatePetMacro(true)
 end
 
+--Changes saved variables from nil to empty lists
+local function InitialStartupOfSavedVariables()
+  if SavedMountWeights == nil then
+    SavedMountWeights = {}
+  end
+  if SavedMountCategoriesWeights == nil then
+    SavedMountCategoriesWeights = {}
+  end
+end
+
 --Handles the entering world event
 local function InitialStartupHandler(self, event, ...)
+  InitialStartupOfSavedVariables()
   InitialStartup(self, event, ...) --Gets the addon into a usable state
   wrm_wait(10, InitialStartup, self, event, ...) --Reruns startup incase parts of the API had not started yet (Updating Macros can fail if called too early)
 end
 
+local function stringStarts(String,Start)
+  return string.sub(String,1,string.len(Start))==Start
+end
+
+local function splitString(stringToSplit)
+  sep = "%s"
+  local t={}
+  for str in string.gmatch(stringToSplit, "([^"..sep.."]+)") do
+          table.insert(t, str)
+  end
+  return t
+end
+
+local function SaveCategory(categoryName, categoryValue)
+  print("set category: " .. categoryName .. ", " .. categoryValue)
+  if AllMountCategories[categoryName] ~= nil then
+    SavedMountCategoriesWeights[categoryName] = tonumber(categoryValue)
+    AllMountCategories[categoryName] = tonumber(categoryValue)
+  end
+  InitialStartup()
+end
+
+local function SaveMount(mountName, mountValue)
+  print("set mount: " .. mountName .. ", " .. mountValue)
+  if AllMounts[mountName] ~= nil then
+    SavedMountWeights[mountName] = tonumber(mountValue)
+    AllMounts[mountName] = tonumber(mountValue)
+  end
+  InitialStartup()
+end
+
 --Captures console commands that are entered
+--/wrm Set Category Glider 0
 local function WRMHandler(parameter)
-    
   if(string.len(parameter) > 0) then --If a parameter was supplied
     if parameter == "list" then
       PrintMounts() --Prints players mounts to console
+    elseif parameter == "listCategories" then
+      PrintCategories()
     elseif parameter == "update" then
       InitialStartup() --Rerun Startup to capture new mounts
     elseif parameter == "debug" then
@@ -570,9 +652,25 @@ local function WRMHandler(parameter)
       print('DebugMode Changed to: ' .. tostring(inDebugMode))
     elseif parameter == "zone" then
       print('Current Zone Category: ' .. CurrentZoneCategory)
+    elseif stringStarts(parameter, "Set") then
+      splitParameter = splitString(parameter)
+      if splitParameter[2] == "Category" then
+        setType = string.gsub(parameter, "Set Category", "")
+        setType = string.gsub(setType, splitParameter[tablelength(splitParameter)], "")
+        setType = string.gsub(setType, '^%s*(.-)%s*$', '%1')
+
+        SaveCategory(setType, splitParameter[tablelength(splitParameter)])
+      end
+      if splitParameter[2] == "Mount" then
+        setType = string.gsub(parameter, "Set Mount", "")
+        setType = string.gsub(setType, splitParameter[tablelength(splitParameter)], "")
+        setType = string.gsub(setType, '^%s*(.-)%s*$', '%1')
+
+        SaveMount(setType, splitParameter[tablelength(splitParameter)])
+      end
     else
       print('Parameter was: ' .. parameter) --Print a list of valid command to the console
-      print('Accepted Parameters are: "list", "update", "debug", "zone"')
+      print('Accepted Parameters are: "list", "listCategories", "update", "debug", "zone"')
     end
   else --If no parameter was supplied update macro with new random mounts
     wrm_wait(0.1, UpdateMountMacro, false)
@@ -614,11 +712,11 @@ local function ZoneChangeHandler(self, event, ...)
     CurrentZoneCategory = zoneCategory
     print("Updating for Zone Change")
     if CurrentZoneCategory == "Ahn'Qiraj" then
-      myCurrentMounts = myAQMounts
-      myCurrentMountsCategories = myAQMountsCategories
+      myCurrentMounts = myMountSets["myAQMounts"]
+      myCurrentMountsCategories = myMountsCategoriesSets["myAQMountsCategories"]
     else
-      myCurrentMounts = myMounts
-      myCurrentMountsCategories = myMountsCategories
+      myCurrentMounts = myMountSets["myMounts"]
+      myCurrentMountsCategories = myMountsCategoriesSets["myMountsCategories"]
     end
     UpdateMountMacro(false)
   end
