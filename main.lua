@@ -621,7 +621,14 @@ end
 
 local function SaveCategory(categoryName, categoryValue)
   print("set category: " .. categoryName .. ", " .. categoryValue)
-  if AllMountCategories[categoryName] ~= nil then
+  mountCategoryFound = false
+  for allMountCategory in pairs(AllMountCategories) do
+    if string.lower(categoryName) == string.lower(allMountCategory) then
+      mountCategoryFound = true
+      categoryName = allMountCategory
+    end
+  end
+  if mountCategoryFound then
     if categoryValue == "0" or categoryValue == "1" then
       SavedMountCategoriesWeights[categoryName] = tonumber(categoryValue)
       AllMountCategories[categoryName] = tonumber(categoryValue)
@@ -636,7 +643,14 @@ end
 
 local function SaveMount(mountName, mountValue)
   print("set mount: " .. mountName .. ", " .. mountValue)
-  if AllMounts[mountName] ~= nil then
+  mountFound = false
+  for allMount in pairs(AllMounts) do
+    if string.lower(mountName) == string.lower(allMount) then
+      mountFound = true
+      mountName = allMount
+    end
+  end
+  if mountFound then
     if mountValue == "0" or mountValue == "1" then
       SavedMountWeights[mountName] = tonumber(mountValue)
       AllMounts[mountName] = tonumber(mountValue)
@@ -653,27 +667,28 @@ end
 --/wrm Set Category Glider 0
 local function WRMHandler(parameter)
   if(string.len(parameter) > 0) then --If a parameter was supplied
-    if parameter == "list" then
+    parameterLower = string.lower(parameter)
+    if parameterLower == "list" then
       PrintMounts() --Prints players mounts to console
-    elseif parameter == "listCategories" then
+    elseif parameterLower == "listcategories" then
       PrintCategories()
-    elseif parameter == "update" then
+    elseif parameterLower == "update" then
       InitialStartup() --Rerun Startup to capture new mounts
-    elseif parameter == "debug" then
+    elseif parameterLower == "debug" then
       inDebugMode = not inDebugMode --Change the debug state of the addon
       print('DebugMode Changed to: ' .. tostring(inDebugMode))
-    elseif parameter == "zone" then
+    elseif parameterLower == "zone" then
       print('Current Zone Category: ' .. CurrentZoneCategory)
-    elseif stringStarts(parameter, "Set") then
+    elseif stringStarts(parameterLower, "set") then
       splitParameter = splitString(parameter)
-      if splitParameter[2] == "Category" then
-        setType = string.gsub(parameter, "Set Category", "")
+      if string.lower(splitParameter[2]) == "category" then
+        setType = string.sub(parameter, 13, string.len(parameter)) --"Set Category"
         setType = string.gsub(setType, splitParameter[tablelength(splitParameter)], "")
         setType = string.gsub(setType, '^%s*(.-)%s*$', '%1')
 
         SaveCategory(setType, splitParameter[tablelength(splitParameter)])
-      elseif splitParameter[2] == "Mount" then
-        setType = string.gsub(parameter, "Set Mount", "")
+      elseif string.lower(splitParameter[2]) == "mount" then
+        setType = string.sub(parameter, 10, string.len(parameter)) --"Set Mount"
         setType = string.gsub(setType, splitParameter[tablelength(splitParameter)], "")
         setType = string.gsub(setType, '^%s*(.-)%s*$', '%1')
 
