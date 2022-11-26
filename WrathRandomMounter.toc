@@ -15,3 +15,5 @@ main.lua
 #When the "Mount" macro is run it will update the mounts that are in the macro to a random mount from your bag so that the next time you use it you will get a different mount.
 #Checks to see if you are in a flying zone and uses a flying mound if you are.
 #Can force a ground mount in a flying zone by holding alt
+#Can remove mounts from the roster using the command "/wrm Set Mount [MountName] [Weight]" with a Weight of 0
+#Can remove MountCategories from the roster using the command "/wrm Set Category [CategoryName] [Weight]" with a Weight of 0

@@ -622,8 +622,14 @@ end
 local function SaveCategory(categoryName, categoryValue)
   print("set category: " .. categoryName .. ", " .. categoryValue)
   if AllMountCategories[categoryName] ~= nil then
-    SavedMountCategoriesWeights[categoryName] = tonumber(categoryValue)
-    AllMountCategories[categoryName] = tonumber(categoryValue)
+    if categoryValue == "0" or categoryValue == "1" then
+      SavedMountCategoriesWeights[categoryName] = tonumber(categoryValue)
+      AllMountCategories[categoryName] = tonumber(categoryValue)
+    else
+      print("Currently only weights of 1 and 0 are accepted")
+    end
+  else
+    print("Category \"" .. categoryName .. "\" could not be found")
   end
   InitialStartup()
 end
@@ -631,8 +637,14 @@ end
 local function SaveMount(mountName, mountValue)
   print("set mount: " .. mountName .. ", " .. mountValue)
   if AllMounts[mountName] ~= nil then
-    SavedMountWeights[mountName] = tonumber(mountValue)
-    AllMounts[mountName] = tonumber(mountValue)
+    if mountValue == "0" or mountValue == "1" then
+      SavedMountWeights[mountName] = tonumber(mountValue)
+      AllMounts[mountName] = tonumber(mountValue)
+    else
+      print("Currently only weights of 1 and 0 are accepted")
+    end
+  else
+    print("Mount \"" .. mountName .. "\" could not be found")
   end
   InitialStartup()
 end
@@ -660,17 +672,18 @@ local function WRMHandler(parameter)
         setType = string.gsub(setType, '^%s*(.-)%s*$', '%1')
 
         SaveCategory(setType, splitParameter[tablelength(splitParameter)])
-      end
-      if splitParameter[2] == "Mount" then
+      elseif splitParameter[2] == "Mount" then
         setType = string.gsub(parameter, "Set Mount", "")
         setType = string.gsub(setType, splitParameter[tablelength(splitParameter)], "")
         setType = string.gsub(setType, '^%s*(.-)%s*$', '%1')
 
         SaveMount(setType, splitParameter[tablelength(splitParameter)])
+      else
+        print("Set funtion needs to in format" .. '"Set Mount [MountName] [Weight]", "Set Category [CategoryName] [Weight]"')
       end
     else
       print('Parameter was: ' .. parameter) --Print a list of valid command to the console
-      print('Accepted Parameters are: "list", "listCategories", "update", "debug", "zone"')
+      print('Accepted Parameters are: "list", "listCategories", "update", "debug", "zone", "Set Mount [MountName] [Weight]", "Set Category [CategoryName] [Weight]"')
     end
   else --If no parameter was supplied update macro with new random mounts
     wrm_wait(0.1, UpdateMountMacro, false)
