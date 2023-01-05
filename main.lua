@@ -508,7 +508,7 @@ local function UpdateMyMounts()
       if (MinSpeed <= 2.8 and MaxSpeed >= 2.8) and ridingSkill >= 300 then --Swift Flying Mount
         AddMountMyMounts("mySwiftFlyingMounts", Category, Mount, myCurrentMounts)
       end
-      if MaxSpeed >= 2.8 and ridingSkill >= 300 then --Super Swift Flying Mount
+      if MaxSpeed > 2.8 and ridingSkill >= 300 then --Super Swift Flying Mount
         AddMountMyMounts("mySuperSwiftFlyingMounts", Category, Mount, myCurrentMounts)
       end
       if SwimSpeed > 0 then -- Swimming Mount
