@@ -1,7 +1,7 @@
 ## Interface: 30403
 ## Title: WrathRandomMounter
 ## Author: Tranzalore
-## Version: 1.4.2
+## Version: 1.4.3
 ## SavedVariablesPerCharacter: SavedMountWeights
 ## SavedVariablesPerCharacter: SavedMountCategoriesWeights
 ## SavedVariablesPerCharacter: DumpAllMounts

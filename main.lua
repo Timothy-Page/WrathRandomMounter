@@ -188,12 +188,20 @@ local function GetRandomMount(mountArray)
 
     -- get categoryies
     for i, mount in ipairs(mountList) do
-      categorieName = mount[7]
-      categorieWeight = SavedMountCategoriesWeights[categorieName]
-      if categorieWeight == nil then
-        categorieWeight = defaultCategoryWeight
+      mountName = mount[2]
+      mountWeight = SavedMountWeights[mountName]
+      if mountWeight == nil then
+        mountWeight = defaultMountWeight
       end
-      categories[tostring(categorieName)] = categorieWeight
+      
+      if mountWeight > 0 then
+        categorieName = mount[7]
+        categorieWeight = SavedMountCategoriesWeights[categorieName]
+        if categorieWeight == nil then
+          categorieWeight = defaultCategoryWeight
+        end
+        categories[tostring(categorieName)] = categorieWeight
+      end
     end
     
     -- get rollRange for each category
@@ -247,6 +255,19 @@ local function GetRandomMount(mountArray)
   end
 
   return mount
+end
+
+local function dump(o)
+  if type(o) == 'table' then
+     local s = '{ '
+     for k,v in pairs(o) do
+        if type(k) ~= 'number' then k = '"'..k..'"' end
+        s = s .. '['..k..'] = ' .. dump(v) .. ','
+     end
+     return s .. '} '
+  else
+     return tostring(o)
+  end
 end
 
 local function GetRandomMounts()
@@ -323,6 +344,14 @@ local function UpdateMyMounts()
     ["myMountsFlying"] = {},
     ["myMountsSwimming"] = {}
   }
+
+  inDalaran = false
+
+  zoneName = GetZoneText()
+  zoneMinimap = GetMinimapZoneText()
+  if zoneName == "Dalaran" and zoneMinimap ~= "Krasus'Landing" then
+    inDalaran = true
+  end
   
   mountIDs = C_MountJournal.GetMountIDs() --List of all avalible MountIDs
   mountCounter = 1 --loop counter
@@ -335,11 +364,15 @@ local function UpdateMyMounts()
     if spellID ~= nil and name ~= nil then
       category = nil
       maxSpeed = nil
+      minSpeed = nil
+      swimSpeed = nil
       localMount = WrathRandomMounter.itemMounts[tostring(spellID)]
 
       if localMount ~= nil then
         category = localMount[7]
         maxSpeed = localMount[4]
+        minSpeed = localMount[5]
+        swimSpeed = localMount[6]
       else
         --print("the mount with spellID " .. tostring(spellID) .. "was not found")
       end
@@ -347,11 +380,12 @@ local function UpdateMyMounts()
       if maxSpeed == nil then
         maxSpeed = 0
       end
-    end
-
-    if name == "Mimiron's Head" then
-      print("Found mount: " .. name)
-      print("Maxspeed: " .. tostring(maxSpeed))
+      if minSpeed == nil then
+        minSpeed = maxSpeed
+      end
+      if swimSpeed == nil then
+        swimSpeed = 0
+      end
     end
 
     --convert to the old variables
@@ -365,54 +399,42 @@ local function UpdateMyMounts()
     isGroundMount = false
     isFlyingMount = false
     isSwiftFlyingMount = false
-    IsSwimmingMount = false
+    isSwimmingMount = false
+    isMultiSpeed = false
 
-    if mountTypeID == 230 then
+    if swimSpeed >= 1 then
+      isSwimmingMount = true
+    end
+
+    if maxSpeed >= 1.5 then
+      isFlyingMount = true
+    end
+
+    if minSpeed <= 1  and maxSpeed >= 0.6 then
       isGroundMount = true
-    elseif mountTypeID == 231 then
-      isSimmingMount = true
-    elseif mountTypeID == 232 then
-      isSimmingMount = true
-    elseif mountTypeID == 241 then
-      isGroundMount = true
-    elseif mountTypeID == 247 then
-      isFlyingMount = true
-    elseif mountTypeID == 248 then
-      isFlyingMount = true
-    elseif mountTypeID == 254 then
-      isSimmingMount = true
-    elseif mountTypeID == 269 then
-      isGroundMount = true
-    elseif mountTypeID == 284 then
-      isGroundMount = true
-    elseif mountTypeID == 398 then
-      isFlyingMount = true
-    elseif mountTypeID == 402 then
-      isFlyingMount = true
-    elseif mountTypeID == 408 then
-      isFlyingMount = true
-    elseif mountTypeID == 412 then
-      isFlyingMount = true
-    elseif mountTypeID == 424 then
-      isFlyingMount = true
     end
 
     if maxSpeed >= 3.1 then
       isSwiftFlyingMount = true
     end
 
+    if isFlyingMount and isGroundMount then
+      isMultiSpeed = true
+    end
+
+
     if (playerFaction == "Alliance" and (faction == nil or faction == 1)) or (playerFaction == "Horde" and (faction == nil or faction == 0)) then --Correct Faction
       if isCollected and not shouldHideOnChar then --Have mount and usable on character
         mount = {creatureSpellID, name, mountID, isGroundMount, isFlyingMount, isSwimmingMount, category}
         table.insert(myMounts["KnownMounts"], mount)
-        if isUsable then --Usable in current zone
+        if isUsable then --Usable in current zone -- or (inDalaran and isMultiSpeed)
           table.insert(myMounts["UsableMounts"], mount)
 
           if isGroundMount then
             table.insert(currentMounts["myMountsGround"], mount)
           end
           if isFlyingMount then
-            if Flightmode == "All" or (Flightmode == "310" and isSwiftFlyingMount) then
+            if Flightmode == "All" or (Flightmode == "310" and isSwiftFlyingMount) then -- or inDalaran
               table.insert(currentMounts["myMountsFlying"], mount)
             end
           end
