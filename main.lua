@@ -1,67 +1,40 @@
 local addonName, WrathRandomMounter = ...
 
 SLASH_WRM1 = "/WRM"
-SLASH_WRP1 = "/WRP"
 local inDebugMode = false
+local defaultCategoryWeight = 100
+local defaultMountWeight = 100
 
 local mounted = IsMounted -- make a local copy of the function and not the result of one execution
 local inCombat = InCombatLockdown -- make a local copy of the function and not the result of one execution
-local CurrentZoneCategory = 'None'
 local ridingSkill = 0
+local flyable = IsFlyableArea -- make a local copy of the function and not the result of one execution
+local indoors = IsIndoors -- make a local copy of the function and not the result of one execution
+local currentlyFlyable = flyable()
+local CurrentlyIndoors = indoors()
+englishFaction, localizedFaction = UnitFactionGroup("player")
+playerFaction = englishFaction
 
---Variables to store player mounts
-local function GenerateBlankMountTable()
-  mountTable = {
-  ["myGroundMounts"] = {},
-  ["mySwiftGroundMounts"] = {},
-  ["myFlyingMounts"] = {},
-  ["mySwiftFlyingMounts"] = {},
-  ["mySuperSwiftFlyingMounts"] = {},
-  ["mySwimmingMounts"] = {}
-  }
-  return mountTable
-end
-local myMountSets = {
-  ["myMounts"] = GenerateBlankMountTable(),
-  ["myAQMounts"] = GenerateBlankMountTable()
+--Variables to store player mounts {{creatureSpellID, name, mountID, isGroundMount, isFlyingMount, isSwimmingMount}, ...}
+local myMounts = {
+  ["UsableMounts"] = {},
+  ["KnownMounts"] = {}
 }
-local myCurrentMounts = GenerateBlankMountTable() --Currently active mount set
-AllMounts = {}
---SavedMountWeights = {
---  ["Festering Emerald Drake"] = 0,
---  ["Kalu'ak Whalebone Glider"] = 0,
---  ["Reawakened Phase-Hunter"] = 0
---}
 
---mySuperSwiftFlyingMountsCategories
 --Variables to store player mount categories
-local function GenerateBlankMountCategoriesTable()
-  mountCategoriesTable = {
-  ["myGroundMountsCategories"] = {},
-  ["mySwiftGroundMountsCategories"] = {},
-  ["myFlyingMountsCategories"] = {},
-  ["mySwiftFlyingMountsCategories"] = {},
-  ["mySuperSwiftFlyingMountsCategories"] = {},
-  ["mySwimmingMountsCategories"] = {}
-  }
-  return mountCategoriesTable
-end
-local myMountsCategoriesSets = {
-  ["myMountsCategories"] = GenerateBlankMountCategoriesTable(),
-  ["myAQMountsCategories"] = GenerateBlankMountCategoriesTable()
+local myMountsCategories = {
+  ["UsableMountsCategories"] = {},
+  ["KnownMountsCategories"] = {}
 }
-local myCurrentMountsCategories = GenerateBlankMountCategoriesTable() --Categories of mounts in "myCurrentMounts"
-AllMountCategories = {}
---SavedMountCategoriesWeights = {
---  ["Glider"] = 0,
---  ["Warp Stalker"] = 0
---}
 
---Variables to store player pets
-local myPets = {}
+--Variables to store mounts by category {{creatureSpellID, name, mountID, isGroundMount, isFlyingMount, isSwimmingMount}, ...}
+currentMounts = {
+  ["myMountsGround"] = {},
+  ["myMountsFlying"] = {},
+  ["myMountsSwimming"] = {}
+}
 
---Get Localized Mount Names
-local function LocalizeMountName()
+local function LocalizeMountName() --Get Localized Mount Names
   for mount in pairs(WrathRandomMounter.itemMounts) do --Loop over all possible mounts from Mounts.lua
     --1:Name, 2:SpellID, 4:MaxSpeed, 5:MinSpeed, 6:SwimSpeed, 7:Category, 9:NormalMount, 10:AQMount
     --ridingSkill 75:0.6, 150:1, 225:1.5, 300:2.8, 375:3.1
@@ -70,12 +43,12 @@ local function LocalizeMountName()
   end
 end
 
---Returns the number of elements in a table
-local function tablelength(T)
+local function tablelength(T) --Returns the number of elements in a table
     local count = 0
     for _ in pairs(T) do count = count + 1 end
     return count
 end
+
 
 local function GetRidingSkill()
   --ridingSkill 75:0.6, 150:1, 225:1.5, 300:2.8, 375:3.1
@@ -129,125 +102,145 @@ function wrm_wait(delay, func, ...)
   return true;
 end
 
---local function PrintMounts()
---  for mountType in pairs (myCurrentMounts) do
---    local mountString = nil
---    for mountCategory in pairs(myCurrentMounts[mountType]) do
---      for mount in pairs(myCurrentMounts[mountType][mountCategory]) do
---        if mountString == nil then
---          mountString = myCurrentMounts[mountType][mountCategory][mount][1]
---        else
---          mountString = mountString .. ", " .. myCurrentMounts[mountType][mountCategory][mount][1]
---        end
---      end
---    end
---    print(mountType .. ": " .. tostring(mountString))
---  end
---end
+local function PrintMountTypeID(name)
+  name = string.lower(name)
+  mountFound = false
+  for mountmyMoutsID in pairs(myMounts["KnownMounts"]) do
+    mountName = myMounts["KnownMounts"][mountmyMoutsID][2]
+    mountNameLower = string.lower(mountName)
+    if mountNameLower == name then
+      creatureDisplayInfoID, description, source, isSelfMount, mountTypeID, uiModelSceneID, animID, spellVisualKitID, disablePlayerMountPreview = C_MountJournal.GetMountInfoExtraByID(myMounts["KnownMounts"][mountmyMoutsID][3])
+      mountFound = true
+      print(name .. ": " .. tostring(mountTypeID))
+    end
+  end
 
-local function PrintMounts()
+  if mountFound == false then
+    print (name .. ": was not found")
+  end
+end
+
+local function PrintMounts(mountList)
   orderedMounts = {}
-  for mountName in pairs(AllMounts) do
-    table.insert(orderedMounts, mountName)
+  for myMountsID in pairs(mountList) do
+    table.insert(orderedMounts, mountList[myMountsID][2])
   end
   table.sort(orderedMounts)
 
   print("Mounts...")
   for mountOrderID in pairs(orderedMounts) do
-    print(orderedMounts[mountOrderID] .. ": " .. tostring(AllMounts[orderedMounts[mountOrderID]]))
+    weight = SavedMountWeights[orderedMounts[mountOrderID]]
+    if weight == nil then
+      weight = defaultMountWeight
+    end
+    print(orderedMounts[mountOrderID] .. ": " .. tostring(weight))
   end
+  print(tablelength(orderedMounts) .. " Mounts Total")
 end
 
 local function PrintCategories()
+  categories = {}
+
+  -- get categoryies
+  for i, mount in ipairs(myMounts["KnownMounts"]) do
+    categorieName = mount[7]
+    categorieWeight = SavedMountCategoriesWeights[categorieName]
+    if categorieWeight == nil then
+      categorieWeight = defaultCategoryWeight
+    end
+    categories[tostring(categorieName)] = categorieWeight
+  end
+
   orderedCategories = {}
-  for categoryName in pairs(AllMountCategories) do
+  for categoryName in pairs(categories) do
     table.insert(orderedCategories, categoryName)
   end
   table.sort(orderedCategories)
 
   print("MountCategories...")
   for categoryorderID in pairs(orderedCategories) do
-    print(orderedCategories[categoryorderID] .. ": " .. tostring(AllMountCategories[orderedCategories[categoryorderID]]))
+    print(orderedCategories[categoryorderID] .. ": " .. tostring(categories[orderedCategories[categoryorderID]]))
   end
-end
-
-local function PrintPets()
-  local petString = nil
-
-  for pet in pairs (myPets) do
-    petName = myPets[pet]
-    if petString == nil then
-      petString = tostring(petName)
-    else
-      petString = petString .. ", " .. tostring(petName)
-    end
-  end
-  print("Pets: " .. tostring(petString))
 end
 
 -- Returns a mount string that is of type mountType
-local function GetRandomMount(mountType)
+local function GetRandomMount(mountArray)
   local mount
-  local mountTypeCategory = mountType .. "Categories"
+  mountList = mountArray
 
-  --Randomly pick a mount category
-  local numberOfCategories = tablelength(myCurrentMountsCategories[mountTypeCategory])
-  if numberOfCategories > 0 then
-    local CategoryId = math.random(numberOfCategories)
-    local CategoryName = nil
+  if RandomMode == "Category" then
+    categories = {}
+    categorie = nil
+    mounts = {}
+    mount = nil
 
-    --Get the category string
-    CategoryName = myCurrentMountsCategories[mountTypeCategory][CategoryId]
+    -- get categoryies
+    for i, mount in ipairs(mountList) do
+      categorieName = mount[7]
+      categorieWeight = SavedMountCategoriesWeights[categorieName]
+      if categorieWeight == nil then
+        categorieWeight = defaultCategoryWeight
+      end
+      categories[tostring(categorieName)] = categorieWeight
+    end
+    
+    -- get rollRange for each category
+    maxRollRange = 0
+    categorieRollRange = {}
+    for categorieName, categorieRange in pairs(categories) do
+      categorieRollRange[categorieName] = {maxRollRange, maxRollRange + categorieRange}
+      maxRollRange = maxRollRange + categorieRange
+    end
 
-    mountList = {}
-    for mountKey, mount in pairs(myCurrentMounts[mountType][CategoryName]) do
-      if AllMounts[mount[1]] == 1 then
-        table.insert(mountList, mount[1])
+    -- roll category
+    if maxRollRange > 0 then
+      local categoryRoll = math.random(maxRollRange)
+      for categorieName, categorieRollRange in pairs(categorieRollRange) do
+        if categoryRoll > categorieRollRange[1] and categoryRoll <= categorieRollRange[2] then
+          categorie = categorieName
+        end
       end
     end
 
-    --Randomly pick a mount from the category
-    local numberOfMounts = tablelength(mountList)
-    if numberOfMounts > 0 then
-      local mountID = math.random(numberOfMounts)
-      mount = mountList[mountID]
+    -- get mounts
+    for i, mount in ipairs(mountList) do
+      mountName = mount[2]
+      categorieName = mount[7]
+      if categorieName == categorie then
+        mountWeight = SavedMountWeights[mountName]
+        if mountWeight == nil then
+          mountWeight = defaultMountWeight
+        end
+        mounts[tostring(mountName)] = mountWeight
+      end
+    end
+
+    -- get rollRange for each mount
+    maxRollRange = 0
+    mountsRollRange = {}
+    for mountName, mountRange in pairs(mounts) do
+      mountsRollRange[mountName] = {maxRollRange, maxRollRange + mountRange}
+      maxRollRange = maxRollRange + mountRange
+    end
+
+    -- roll mount
+    if maxRollRange > 0 then
+      local mountRoll = math.random(maxRollRange)
+      for mountName, mountRollRange in pairs(mountsRollRange) do
+        if mountRoll > mountRollRange[1] and mountRoll <= mountRollRange[2] then
+          mount = mountName
+        end
+      end
     end
   end
 
   return mount
 end
 
--- Returns a pet string
-local function GetRandomPet()
-  local pet
-
-  --Randomly pick a pet
-  local numberOfPets = tablelength(myPets)
-  if numberOfPets > 0 then
-    local petID = math.random(numberOfPets)
-    pet = myPets[petID]
-  end
-
-  return pet
-end
-
 local function GetRandomMounts()
-  local groundMount = GetRandomMount("myGroundMounts")
-  local swiftGroundMount = GetRandomMount("mySwiftGroundMounts")
-  local flyingMount = GetRandomMount("myFlyingMounts")
-  local swiftFlyingMount = GetRandomMount("mySwiftFlyingMounts")
-  local superSwiftFlyingMount = GetRandomMount("mySuperSwiftFlyingMounts")
-  local swimmingMount = GetRandomMount("mySwimmingMounts")
-  
-  if superSwiftFlyingMount ~= nil then --replace SwiftFlying mount with SuperSwiftFlying mount if exists
-    swiftFlyingMount = superSwiftFlyingMount
-  end
-  if swiftFlyingMount ~= nil then --replace flyingMount with SwiftFlying mount if exists
-    flyingMount = swiftFlyingMount
-  end
-  if swiftGroundMount ~= nil then --replace groundmount with SwiftGroundMount if exists
-    groundMount = swiftGroundMount
-  end
+  local groundMount = GetRandomMount(currentMounts["myMountsGround"])
+  local flyingMount = GetRandomMount(currentMounts["myMountsFlying"])
+  local swimmingMount = GetRandomMount(currentMounts["myMountsSwimming"])
 
   return groundMount, flyingMount, swimmingMount
 end
@@ -298,32 +291,6 @@ local function UpdateMacro(groundMount, flyingMount, swimmingMount)
     end
 end
 
---Update ingame macro with the new pet
-local function UpdatePetMacro(forceUpdate)
-  --#showtooltip
-  --/cast pet
-  --/WRP
-
-  if not inCombat() then
-    local pet = GetRandomPet()
-    local body = nil
-    
-    if pet ~= nil then
-      body = "#showtooltip " .. "\n/cast " .. pet .. "\n/WRP"
-    else
-      body = "#showtooltip " .. "\n/WRP"
-    end
-  
-    --Save the macro
-    macroIndex = GetMacroIndexByName("Pet")
-    if macroIndex == 0 then
-      CreateMacro("Pet", "INV_MISC_QUESTIONMARK", body, nil)
-    else
-      EditMacro("Pet", "Pet", nil, body, 1, 1)
-    end
-  end
-end
-
 --Check if table contains element
 local function tableContains(table, element)
   for _, value in pairs(table) do
@@ -334,241 +301,115 @@ local function tableContains(table, element)
   return false
 end
 
---Adds mount into table and creates the category if it does not exist
-local function AddMountMyMounts(type, category, mount, mountTable)
-  if mountTable[type][category] == nil then
-    mountTable[type][category] = {mount}
-  else
-    table.insert(mountTable[type][category], mount)
-  end
-end
-
-local function GetAllMounts(mountTable, mountList)
-  for mountType in pairs(myCurrentMounts) do
-    for category in pairs(myCurrentMounts[mountType]) do
-      for mount in pairs(myCurrentMounts[mountType][category]) do
-        mountName = myCurrentMounts[mountType][category][mount][1]
-        if mountList[mountName] == nil then
-          if SavedMountWeights[mountName] == nil then
-            mountList[mountName] = 1
-          else
-            mountList[mountName] = SavedMountWeights[mountName]
-          end
-        end
-      end
-    end
-  end
-end
-
-local function GetAllMountCategories(mountTable, categoryList)
-  for mountType in pairs(myCurrentMounts) do
-    for category in pairs(myCurrentMounts[mountType]) do
-      if categoryList[category] == nil then
-        if SavedMountCategoriesWeights[category] == nil then
-          categoryList[category] = 1
-        else
-          categoryList[category] = SavedMountCategoriesWeights[category]
-        end
-      end
-    end
-  end
-end
-
-local function RecordMountCategories(mountTable, categoryTable)
-    --Put Categories into categoryTable
-    for mountCategory, mounts in pairs(mountTable["myGroundMounts"]) do
-      if AllMountCategories[mountCategory] ~= 0 then
-        table.insert(categoryTable["myGroundMountsCategories"], mountCategory)
-      end
-    end
-    for mountCategory, mounts in pairs(mountTable["mySwiftGroundMounts"]) do
-      if AllMountCategories[mountCategory] ~= 0 then
-        table.insert(categoryTable["mySwiftGroundMountsCategories"], mountCategory)
-      end
-    end
-    for mountCategory, mounts in pairs(mountTable["myFlyingMounts"]) do
-      if AllMountCategories[mountCategory] ~= 0 then
-        table.insert(categoryTable["myFlyingMountsCategories"], mountCategory)
-      end
-    end
-    for mountCategory, mounts in pairs(mountTable["mySwiftFlyingMounts"]) do
-      if AllMountCategories[mountCategory] ~= 0 then
-        table.insert(categoryTable["mySwiftFlyingMountsCategories"], mountCategory)
-      end
-    end
-    for mountCategory, mounts in pairs(mountTable["mySuperSwiftFlyingMounts"]) do
-      if AllMountCategories[mountCategory] ~= 0 then
-        table.insert(categoryTable["mySuperSwiftFlyingMountsCategories"], mountCategory)
-      end
-    end
-    for mountCategory, mounts in pairs(mountTable["mySwimmingMounts"]) do
-      if AllMountCategories[mountCategory] ~= 0 then
-        table.insert(categoryTable["mySwimmingMountsCategories"], mountCategory)
-      end
-    end
-end
-
---Updates the pet tables based on the companion API
-local function UpdateMyPets()
-  myPets = {}
-
-  -- Get pets from the companion API
-  PetsKnown = {} --Stores the API pets
-  CompanionType = "CRITTER"
-  numPets = GetNumCompanions(CompanionType) --total number of API pets
-  petCounter = 1 --loop counter
-  while petCounter <= numPets do
-    creatureID, creatureName, creatureSpellID, icon, issummoned, petType = GetCompanionInfo(CompanionType, petCounter)
-    if inDebugMode then
-      --print("PetSpellID: " .. creatureSpellID)
-      --print("PetName: " .. creatureName)
-    end
-    table.insert(PetsKnown, {creatureSpellID, creatureName})
-    petCounter = petCounter + 1
-  end
-
-  -- Get additional pet data from Pets.lua
-  for pet in pairs(PetsKnown) do --Loop over all possible pets from Pets.lua
-    --1:PetName, 2:PetCategory
-    Pet = WrathRandomMounter.itemPets[tostring(PetsKnown[pet][1])] --Table off all the pet data
-    if inDebugMode then
-      print("Pet: " .. tostring(PetsKnown[pet][1] .. ", " .. tostring(PetsKnown[pet][2])))
-      print("Pet Table: " .. tostring(Pet))
-    end
-
-    
-    SpellID = nil
-    PetName = nil
-    PetCategory = nil
-    if Pet ~= nil then
-      SpellID = pet
-      PetName = Pet[1]
-      PetCategory = Pet[2]
-    else
-      SpellID = PetsKnown[pet][1]
-      PetName = PetsKnown[pet][2]
-      PetCategory = "None"
-    end
-    
-    if inDebugMode then
-      print("Petnaem: " .. tostring(PetName))
-    end
-
-    table.insert(myPets, PetName)
-  end
-
-  if inDebugMode then
-    PrintPets()
-  end
-end
-
 --Updates the mount tables based on the companion API
 local function UpdateMyMounts()
-  myMountSets["myMounts"] = GenerateBlankMountTable()
-  myMountSets["myAQMounts"] = GenerateBlankMountTable()
-  myMountsCategoriesSets["myMountsCategories"] = GenerateBlankMountCategoriesTable()
-  myMountsCategoriesSets["myAQMountsCategories"] = GenerateBlankMountCategoriesTable()
 
-  -- Get mounts from the companion API
-  MountsKnown = {} --Stores the API mounts
-  CompanionType = "MOUNT"
-  numMounts = GetNumCompanions(CompanionType) --total number of API mounts
+  myMounts["UsableMounts"] = {}
+  myMounts["KnownMounts"] = {}
+  currentMounts = {
+    ["myMountsGround"] = {},
+    ["myMountsFlying"] = {},
+    ["myMountsSwimming"] = {}
+  }
+  
+  mountIDs = C_MountJournal.GetMountIDs() --List of all avalible MountIDs
   mountCounter = 1 --loop counter
-  while mountCounter <= numMounts do
-    creatureID, creatureName, creatureSpellID, icon, issummoned, mountType = GetCompanionInfo(CompanionType, mountCounter)
-    table.insert(MountsKnown, creatureSpellID)
+  while mountCounter <= #mountIDs do
+    name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, mountID = C_MountJournal.GetMountInfoByID(mountIDs[mountCounter])
+    creatureDisplayInfoID, description, source, isSelfMount, mountTypeID, uiModelSceneID, animID, spellVisualKitID, disablePlayerMountPreview = C_MountJournal.GetMountInfoExtraByID(mountID)
+
+
+    --1:Name, 2:SpellID, 4:MaxSpeed, 5:MinSpeed, 6:SwimSpeed, 7:Category, 9:NormalMount, 10:AQMount
+    if spellID ~= nil and name ~= nil then
+      category = nil
+      localMount = WrathRandomMounter.itemMounts[tostring(spellID)]
+
+      if localMount ~= nil then
+        category = WrathRandomMounter.itemMounts[tostring(spellID)][7]
+      else
+        --print("the mount with spellID " .. tostring(spellID) .. "was not found")
+      end
+    end
+    
+    --print details to check them
+    if name == "Felsteed" and debug then
+      print(name .. " isActive: " .. tostring(isActive))
+      print(name .. " isUsable: " .. tostring(isUsable))
+      print(name .. " sourceType: " .. tostring(sourceType))
+      print(name .. " shouldHideOnChar: " .. tostring(shouldHideOnChar))
+      print(name .. " isCollected: " .. tostring(isCollected))
+      print(name .. " mountID: " .. tostring(mountID))
+    end
+
+    --convert to the old variables
+    creatureID = nil
+    creatureName = name
+    creatureSpellID = spellID
+    icon = icon
+    issummoned = isActive
+    moutType = nil
+
+    isGroundMount = false
+    isFlyingMount = false
+    IsSwimmingMount = false
+
+    if mountTypeID == 230 then
+      isGroundMount = true
+    elseif mountTypeID == 231 then
+      isSimmingMount = true
+    elseif mountTypeID == 232 then
+      isSimmingMount = true
+    elseif mountTypeID == 241 then
+      isGroundMount = true
+    elseif mountTypeID == 247 then
+      isFlyingMount = true
+    elseif mountTypeID == 248 then
+      isFlyingMount = true
+    elseif mountTypeID == 254 then
+      isSimmingMount = true
+    elseif mountTypeID == 269 then
+      isGroundMount = true
+    elseif mountTypeID == 284 then
+      isGroundMount = true
+    elseif mountTypeID == 398 then
+      isFlyingMount = true
+    elseif mountTypeID == 402 then
+      isFlyingMount = true
+    elseif mountTypeID == 408 then
+      isFlyingMount = true
+    elseif mountTypeID == 412 then
+      isFlyingMount = true
+    elseif mountTypeID == 424 then
+      isFlyingMount = true
+    end
+
+    if (playerFaction == "Alliance" and (faction == nil or faction == 1)) or (playerFaction == "Horde" and (faction == nil or faction == 0)) then --Correct Faction
+      if isCollected and not shouldHideOnChar then --Have mount and usable on character
+        mount = {creatureSpellID, name, mountID, isGroundMount, isFlyingMount, isSwimmingMount, category}
+        table.insert(myMounts["KnownMounts"], mount)
+        if isUsable then --Usable in current zone
+          table.insert(myMounts["UsableMounts"], mount)
+
+          if isGroundMount then
+            table.insert(currentMounts["myMountsGround"], mount)
+          end
+          if isFlyingMount then
+            table.insert(currentMounts["myMountsFlying"], mount)
+          end
+          if isSwimmingMount then
+            table.insert(currentMounts["myMountsSwimming"], mount)
+          end
+
+        end
+      end
+    end
     mountCounter = mountCounter + 1
   end
 
-  -- Get additional mount data from Mounts.lua and put into myCurrentMounts
-  for mount in pairs(WrathRandomMounter.itemMounts) do --Loop over all possible mounts from Mounts.lua
-    --2:SpellID, 4:MaxSpeed, 5:MinSpeed, 6:SwimSpeed, 7:Category, 9:NormalMount, 10:AQMount
-    --ridingSkill 75:0.6, 150:1, 225:1.5, 300:2.8, 375:3.1
-    Mount = WrathRandomMounter.itemMounts[mount] --Table off all the mount data
-    SpellID = Mount[2]
-    MaxSpeed = Mount[4]
-    MinSpeed = Mount[5]
-    SwimSpeed = Mount[6]
-    Category = Mount[7]
-    NormalMount = Mount[9]
-    AQMount = Mount[10]
-    
-    if tableContains(MountsKnown, SpellID) then --Check if player has mount
-      --print("SpellID: " .. SpellID)
-      --print("RidingSkill: " .. ridingSkill)
-      if MinSpeed <= 1 and ridingSkill >= 75 then --Ground Mount
-        AddMountMyMounts("myGroundMounts", Category, Mount, myCurrentMounts)
-      end
-      if (MinSpeed <= 1 and MaxSpeed >=1) and ridingSkill >= 150 then --SwiftGround Mount
-        AddMountMyMounts("mySwiftGroundMounts", Category, Mount, myCurrentMounts)
-      end
-      if MaxSpeed > 1 and ridingSkill >= 225 then --Flying Mount
-        AddMountMyMounts("myFlyingMounts", Category, Mount, myCurrentMounts)
-      end
-      if (MinSpeed <= 2.8 and MaxSpeed >= 2.8) and ridingSkill >= 300 then --Swift Flying Mount
-        AddMountMyMounts("mySwiftFlyingMounts", Category, Mount, myCurrentMounts)
-      end
-      if MaxSpeed >= 2.8 and ridingSkill >= 300 then --Super Swift Flying Mount
-        AddMountMyMounts("mySuperSwiftFlyingMounts", Category, Mount, myCurrentMounts)
-      end
-      if SwimSpeed > 0 then -- Swimming Mount
-        AddMountMyMounts("mySwimmingMounts", Category, Mount, myCurrentMounts)
-      end
-    end
-  end
-  
-  GetAllMounts(myCurrentMounts, AllMounts)
-  --Move Mounts from myCurrentMounts to separate Mount set
-  for MountType in pairs(myCurrentMounts) do
-    for Category in pairs(myCurrentMounts[MountType]) do
-      for mount in pairs(myCurrentMounts[MountType][Category]) do
-        Mount = myCurrentMounts[MountType][Category][mount]
-        SpellID = Mount[2]
-        NormalMount = Mount[9]
-        AQMount = Mount[10]
-        
-        if NormalMount == 1 then
-          AddMountMyMounts(MountType, Category, Mount, myMountSets["myMounts"])
-        end
-        if AQMount == 1 then
-          AddMountMyMounts(MountType, Category, Mount, myMountSets["myAQMounts"])
-        end
-      end
-    end
-  end
-
-  --Put Categories into myCurrentMountsCategories
-  GetAllMountCategories(myCurrentMounts, AllMountCategories)
-  RecordMountCategories(myMountSets["myMounts"], myMountsCategoriesSets["myMountsCategories"])
-  RecordMountCategories(myMountSets["myAQMounts"], myMountsCategoriesSets["myAQMountsCategories"])
-
-  --Update Current tables
-  if CurrentZoneCategory == "Ahn'Qiraj" then
-    myCurrentMounts = myMountSets["myAQMounts"]
-    myCurrentMountsCategories = myMountsCategoriesSets["myAQMountsCategories"]
-  else
-    myCurrentMounts = myMountSets["myMounts"]
-    myCurrentMountsCategories = myMountsCategoriesSets["myMountsCategories"]
-  end
-
   if inDebugMode then
-    PrintMounts()
+    PrintMounts(myMounts["KnownMounts"])
+    PrintMounts(myMounts["UsableMounts"])
   end
-end
-
-local function GetCurrentZoneCategory()
-  local zoneText = GetZoneText()
-  local zoneCategory = WrathRandomMounter.itemZones[zoneText]
-  if zoneCategory == nil then
-    zoneCategory = 'None'
-  end
-  
-  if inDebugMode then
-    print("Current Zone: " .. zoneText)
-    print("Current Zone Category: " .. zoneCategory)
-  end
-  
-  return zoneCategory
 end
 
 local function UpdateMountMacro(forceUpdate)
@@ -580,13 +421,22 @@ end
 
 --Gets mounts and updates macro when addon is loaded.
 local function InitialStartup(self, event, ...)
-  CurrentZoneCategory = GetCurrentZoneCategory()
   GetRidingSkill()
   LocalizeMountName()
   UpdateMyMounts() --Update mount table with current mounts
   UpdateMountMacro(true)
-  UpdateMyPets()
-  UpdatePetMacro(true)
+end
+
+local function updateSavedWeightTo100()
+  for mountName, weight in pairs(SavedMountWeights) do
+    SavedMountWeights[mountName] = 100 * weight
+  end
+  print("Mount weights have been updated")
+
+  for categorieName, weight in pairs(SavedMountCategoriesWeights) do
+    SavedMountCategoriesWeights[categorieName] = 100 * weight
+  end
+  print("Mount category weights have been updated")
 end
 
 --Changes saved variables from nil to empty lists
@@ -597,6 +447,17 @@ local function InitialStartupOfSavedVariables()
   if SavedMountCategoriesWeights == nil then
     SavedMountCategoriesWeights = {}
   end
+  if RandomMode == nil then
+    RandomMode = "Category" --Category, Mount
+  end
+  if SettingsVersion == nil then
+    SettingsVersion = 0
+  end
+
+  if SettingsVersion < 1 then
+    updateSavedWeightTo100()
+    SettingsVersion = 1
+  end
 end
 
 --Handles the entering world event
@@ -606,7 +467,7 @@ local function InitialStartupHandler(self, event, ...)
   wrm_wait(10, InitialStartup, self, event, ...) --Reruns startup incase parts of the API had not started yet (Updating Macros can fail if called too early)
 end
 
-local function stringStarts(String,Start)
+local function stringStarts(String,Start) -- Check if string starts with the given string
   return string.sub(String,1,string.len(Start))==Start
 end
 
@@ -622,18 +483,18 @@ end
 local function SaveCategory(categoryName, categoryValue)
   print("set category: " .. categoryName .. ", " .. categoryValue)
   mountCategoryFound = false
-  for allMountCategory in pairs(AllMountCategories) do
-    if string.lower(categoryName) == string.lower(allMountCategory) then
+  for mountIndex, mount in ipairs(myMounts["KnownMounts"]) do
+    if string.lower(categoryName) == string.lower(tostring(mount[7])) then
       mountCategoryFound = true
-      categoryName = allMountCategory
+      categoryName = mount[7]
     end
   end
+
   if mountCategoryFound then
-    if categoryValue == "0" or categoryValue == "1" then
+    if tonumber(categoryValue) ~= nil then
       SavedMountCategoriesWeights[categoryName] = tonumber(categoryValue)
-      AllMountCategories[categoryName] = tonumber(categoryValue)
     else
-      print("Currently only weights of 1 and 0 are accepted")
+      print("Needs to be an integer, current default is: " .. tostring(defaultCategoryWeight))
     end
   else
     print("Category \"" .. categoryName .. "\" could not be found")
@@ -644,18 +505,17 @@ end
 local function SaveMount(mountName, mountValue)
   print("set mount: " .. mountName .. ", " .. mountValue)
   mountFound = false
-  for allMount in pairs(AllMounts) do
-    if string.lower(mountName) == string.lower(allMount) then
+  for mountIndex, mount in ipairs(myMounts["KnownMounts"]) do
+    if string.lower(mountName) == string.lower(mount[2]) then
       mountFound = true
-      mountName = allMount
+      mountName = mount[2]
     end
   end
   if mountFound then
-    if mountValue == "0" or mountValue == "1" then
+    if tonumber(mountValue) ~= nil then
       SavedMountWeights[mountName] = tonumber(mountValue)
-      AllMounts[mountName] = tonumber(mountValue)
     else
-      print("Currently only weights of 1 and 0 are accepted")
+      print("Needs to be an integer, current default is: " .. tostring(defaultMountWeight))
     end
   else
     print("Mount \"" .. mountName .. "\" could not be found")
@@ -665,11 +525,40 @@ end
 
 --Captures console commands that are entered
 --/wrm Set Category Glider 0
+
+local function DumpMounts()
+  DumpAllMounts = {}
+
+  mountIDs = C_MountJournal.GetMountIDs() --List of all avalible MountIDs
+  mountCounter = 1 --loop counter
+  while mountCounter <= #mountIDs do
+    name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, mountID = C_MountJournal.GetMountInfoByID(mountIDs[mountCounter])
+    creatureDisplayInfoID, description, source, isSelfMount, mountTypeID, uiModelSceneID, animID, spellVisualKitID, disablePlayerMountPreview = C_MountJournal.GetMountInfoExtraByID(mountID)
+    
+
+    if name ~= nil then
+      if mountCounter == 1 then
+        print(name)
+      end
+      DumpAllMounts[name] = {mountID, name, spellID, mountTypeID}
+    end
+    
+    mountCounter = mountCounter + 1
+  end
+  print("List of mounts was Saved")
+end
+
 local function WRMHandler(parameter)
   if(string.len(parameter) > 0) then --If a parameter was supplied
     parameterLower = string.lower(parameter)
     if parameterLower == "list" then
-      PrintMounts() --Prints players mounts to console
+      PrintMounts(myMounts["KnownMounts"]) --Prints players mounts to console
+    elseif parameterLower == "list usable" then
+        PrintMounts(myMounts["UsableMounts"]) --Prints players mounts to console
+    elseif parameterLower == "list ground" then
+        PrintMounts(currentMounts["myMountsGround"]) --Prints players mounts to console
+    elseif parameterLower == "list flying" then
+        PrintMounts(currentMounts["myMountsFlying"]) --Prints players mounts to console
     elseif parameterLower == "listcategories" then
       PrintCategories()
     elseif parameterLower == "update" then
@@ -677,8 +566,12 @@ local function WRMHandler(parameter)
     elseif parameterLower == "debug" then
       inDebugMode = not inDebugMode --Change the debug state of the addon
       print('DebugMode Changed to: ' .. tostring(inDebugMode))
-    elseif parameterLower == "zone" then
-      print('Current Zone Category: ' .. CurrentZoneCategory)
+    elseif stringStarts(parameterLower, "mounttype") then
+      splitParameter = splitString(parameter)
+      mountName = string.sub(parameter, 11, string.len(parameter)) --"mounttype"
+      PrintMountTypeID(mountName)
+    elseif parameterLower == "settings" then
+      print("Current Settings Version: " .. tostring(SettingsVersion))
     elseif stringStarts(parameterLower, "set") then
       splitParameter = splitString(parameter)
       if string.lower(splitParameter[2]) == "category" then
@@ -694,11 +587,13 @@ local function WRMHandler(parameter)
 
         SaveMount(setType, splitParameter[tablelength(splitParameter)])
       else
-        print("Set funtion needs to in format" .. '"Set Mount [MountName] [Weight]", "Set Category [CategoryName] [Weight]"')
+        print('Accepted Parameters are: "Set Mount [MountName] [Weight]", "Set Category [CategoryName] [Weight]"')
       end
+    elseif parameterLower == "dump mounts" then
+      DumpMounts()
     else
       print('Parameter was: ' .. parameter) --Print a list of valid command to the console
-      print('Accepted Parameters are: "list", "listCategories", "update", "debug", "zone", "Set Mount [MountName] [Weight]", "Set Category [CategoryName] [Weight]"')
+      print('Accepted Parameters are: "list", "list usable", "list ground", "list flying", "listCategories", "update", "debug", "zone", "Set Mount [MountName] [Weight]", "Set Category [CategoryName] [Weight]", "MountType [Mount Name]", "Settings", "Dump Mounts"')
     end
   else --If no parameter was supplied update macro with new random mounts
     wrm_wait(0.1, UpdateMountMacro, false)
@@ -709,48 +604,14 @@ local function WRMHandler(parameter)
   end
 end
 
-local function WRPHandler(parameter)
-    
-  if(string.len(parameter) > 0) then --If a parameter was supplied
-    if parameter == "list" then
-      PrintPets() --Prints players mounts to console
-    elseif parameter == "update" then
-      UpdateMyPets() --Rerun Startup to capture new pets
-    elseif parameter == "debug" then
-      inDebugMode = not inDebugMode --Change the debug state of the addon
-      print('DebugMode Changed to: ' .. tostring(inDebugMode))
-    else
-      print('Parameter was: ' .. parameter) --Print a list of valid command to the console
-      print('Accepted Parameters are: "list", "update", "debug"')
-    end
-  else --If no parameter was supplied update macro with new random pets
-    wrm_wait(0.1, UpdatePetMacro, false)
-  end
-
-  if inDebugMode then
-      print("WRP was called with parameter: " .. parameter)
-  end
-end
-
 --Handles the changing zone event
 local function ZoneChangeHandler(self, event, ...)
-  local zoneCategory = GetCurrentZoneCategory()
   
-  if CurrentZoneCategory ~= zoneCategory then
-    CurrentZoneCategory = zoneCategory
-    print("Updating for Zone Change")
-    if CurrentZoneCategory == "Ahn'Qiraj" then
-      myCurrentMounts = myMountSets["myAQMounts"]
-      myCurrentMountsCategories = myMountsCategoriesSets["myAQMountsCategories"]
-    else
-      myCurrentMounts = myMountSets["myMounts"]
-      myCurrentMountsCategories = myMountsCategoriesSets["myMountsCategories"]
-    end
-    UpdateMountMacro(false)
-  end
+  UpdateMyMounts()--Update mount table with current mounts
+  UpdateMountMacro(true)
   
   if inDebugMode then
-    print("Zone Category Now: " .. zoneCategory)
+    print("Zone Changed")
   end
 end
 
@@ -762,15 +623,17 @@ EnterWorldFrame:SetScript("OnEvent", InitialStartupHandler)
 
 -- Update player zone
 local ChangeZoneFrame = CreateFrame("Frame")
-ChangeZoneFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+ChangeZoneFrame:RegisterEvent("ZONE_CHANGED")
 ChangeZoneFrame:SetScript("OnEvent", ZoneChangeHandler)
 
 
 -- Register slash commands
 SlashCmdList["WRM"] = WRMHandler;
-SlashCmdList["WRP"] = WRPHandler;
 
-
+--local flyable = IsFlyableArea -- make a local copy of the function and not the result of one execution
+--local indoors = isIndoors -- make a local copy of the function and not the result of one execution
+--local currentlyFlyable = flyable()
+--local CurrentlyIndoors = indoors()
 
 -- New API Commands
 --CallCompanion(Type, ID) - uses companion

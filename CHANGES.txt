@@ -1,20 +1,34 @@
-commit 5a74ad0830699a49d9962b2dbe50c25cac872b57
-Author: Timothy-Page <timothypage.tp@gmail.com>
-Date:   Wed Aug 10 08:53:01 2022 +1000
+tag 3f39dbb4adbc713f6645cfac317bceea0e853812 1.2.7-release
+Author:	Timothy-Page <timothypage.tp@gmail.com>
+Date:	Sun Nov 6 12:36:06 2022 +1100
 
-    renames from classic random mounter to wrath random mounter
+commit d8f23354aea2de3700afadd8b10b933607d3d25b
+Author: Podblast <bstapylton@gmail.com>
+Date:   Sat Nov 5 16:48:52 2022 +1100
 
-commit d2d2f240d2c60df3f6852547b3f3ce0d542cef13
-Author: Timothy-Page <timothypage.tp@gmail.com>
-Date:   Tue Aug 9 22:59:58 2022 +1000
+    Added Festering Emerald Drake
 
-    Quick update for addon to work in Wotlk
-    
-    Upadted the mounte libary to have the spellID of all mounts which can be checked in the companion API to see if the player has the mount.
+commit da2cea87755e92d989701aa543b38938957c623f
+Author: Podblast <bstapylton@gmail.com>
+Date:   Sat Nov 5 03:29:45 2022 +1100
 
-commit 304e407be708968b470f32ca2cf3bcbc82f98144
-Author: Timothy-Page <44987179+Timothy-Page@users.noreply.github.com>
-Date:   Tue Aug 9 22:51:46 2022 +1000
+    Renamed 'Tiny Crimson Whelpling' to 'Crimson Whelpling'.
 
-    Initial commit
+commit e97d8daa28094b8f543e8045c1a9a703ad1eb294
+Author: Carl Poole <carl@ionic.io>
+Date:   Thu Nov 3 18:33:38 2022 -0500
+
+    Hide the RidingSkill log behind debug mode
+
+commit e97d8daa28094b8f543e8045c1a9a703ad1eb294
+Author: Carl Poole <carl@ionic.io>
+Date:   Thu Nov 3 18:33:38 2022 -0500
+
+    Hide the RidingSkill log behind debug mode
+
+commit e97d8daa28094b8f543e8045c1a9a703ad1eb294
+Author: Carl Poole <carl@ionic.io>
+Date:   Thu Nov 3 18:33:38 2022 -0500
+
+    Hide the RidingSkill log behind debug mode
 
