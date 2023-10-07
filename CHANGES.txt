@@ -1,34 +1,10 @@
-tag 3f39dbb4adbc713f6645cfac317bceea0e853812 1.2.7-release
-Author:	Timothy-Page <timothypage.tp@gmail.com>
-Date:	Sun Nov 6 12:36:06 2022 +1100
+tag 920744f859afe5b3b5e7901bb8736b9ce8a4b335 1.4.1-release
+Author:	Timothy-Page <44987179+Timothy-Page@users.noreply.github.com>
+Date:	Sat Oct 7 23:05:56 2023 +1100
 
-commit d8f23354aea2de3700afadd8b10b933607d3d25b
-Author: Podblast <bstapylton@gmail.com>
-Date:   Sat Nov 5 16:48:52 2022 +1100
+commit 0bf83d0ef0e3a7d10bde7cc1c1502c9aac6831d3
+Author: Timothy-Page <44987179+Timothy-Page@users.noreply.github.com>
+Date:   Sat Oct 7 20:52:51 2023 +1100
 
-    Added Festering Emerald Drake
-
-commit da2cea87755e92d989701aa543b38938957c623f
-Author: Podblast <bstapylton@gmail.com>
-Date:   Sat Nov 5 03:29:45 2022 +1100
-
-    Renamed 'Tiny Crimson Whelpling' to 'Crimson Whelpling'.
-
-commit e97d8daa28094b8f543e8045c1a9a703ad1eb294
-Author: Carl Poole <carl@ionic.io>
-Date:   Thu Nov 3 18:33:38 2022 -0500
-
-    Hide the RidingSkill log behind debug mode
-
-commit e97d8daa28094b8f543e8045c1a9a703ad1eb294
-Author: Carl Poole <carl@ionic.io>
-Date:   Thu Nov 3 18:33:38 2022 -0500
-
-    Hide the RidingSkill log behind debug mode
-
-commit e97d8daa28094b8f543e8045c1a9a703ad1eb294
-Author: Carl Poole <carl@ionic.io>
-Date:   Thu Nov 3 18:33:38 2022 -0500
-
-    Hide the RidingSkill log behind debug mode
+    Updated for new mount interface
 

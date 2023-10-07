@@ -52,6 +52,18 @@ end
 
 local function GetRidingSkill()
   --ridingSkill 75:0.6, 150:1, 225:1.5, 300:2.8, 375:3.1
+
+  --index = 1
+  --skillName = ""
+  --skillRank = nil
+  --while skillName ~= "Riding" do
+  --  skillName, header, isExpanded, skillRank, numTempPoints, skillModifier, skillMaxRank, isAbandonable, stepCost, rankCost, minLevel, skillCostType, skillDescription = GetSkillLineInfo(index)
+  --  
+  --  index = index + 1
+  --end
+  --
+  --ridingSkill = skillRank
+
   if IsPlayerSpell(33388, false) then--75
     ridingSkill = 75
   end
@@ -322,23 +334,24 @@ local function UpdateMyMounts()
     --1:Name, 2:SpellID, 4:MaxSpeed, 5:MinSpeed, 6:SwimSpeed, 7:Category, 9:NormalMount, 10:AQMount
     if spellID ~= nil and name ~= nil then
       category = nil
+      maxSpeed = nil
       localMount = WrathRandomMounter.itemMounts[tostring(spellID)]
 
       if localMount ~= nil then
-        category = WrathRandomMounter.itemMounts[tostring(spellID)][7]
+        category = localMount[7]
+        maxSpeed = localMount[4]
       else
         --print("the mount with spellID " .. tostring(spellID) .. "was not found")
       end
+
+      if maxSpeed == nil then
+        maxSpeed = 0
+      end
     end
-    
-    --print details to check them
-    if name == "Felsteed" and debug then
-      print(name .. " isActive: " .. tostring(isActive))
-      print(name .. " isUsable: " .. tostring(isUsable))
-      print(name .. " sourceType: " .. tostring(sourceType))
-      print(name .. " shouldHideOnChar: " .. tostring(shouldHideOnChar))
-      print(name .. " isCollected: " .. tostring(isCollected))
-      print(name .. " mountID: " .. tostring(mountID))
+
+    if name == "Mimiron's Head" then
+      print("Found mount: " .. name)
+      print("Maxspeed: " .. tostring(maxSpeed))
     end
 
     --convert to the old variables
@@ -351,6 +364,7 @@ local function UpdateMyMounts()
 
     isGroundMount = false
     isFlyingMount = false
+    isSwiftFlyingMount = false
     IsSwimmingMount = false
 
     if mountTypeID == 230 then
@@ -383,6 +397,10 @@ local function UpdateMyMounts()
       isFlyingMount = true
     end
 
+    if maxSpeed >= 3.1 then
+      isSwiftFlyingMount = true
+    end
+
     if (playerFaction == "Alliance" and (faction == nil or faction == 1)) or (playerFaction == "Horde" and (faction == nil or faction == 0)) then --Correct Faction
       if isCollected and not shouldHideOnChar then --Have mount and usable on character
         mount = {creatureSpellID, name, mountID, isGroundMount, isFlyingMount, isSwimmingMount, category}
@@ -394,7 +412,9 @@ local function UpdateMyMounts()
             table.insert(currentMounts["myMountsGround"], mount)
           end
           if isFlyingMount then
-            table.insert(currentMounts["myMountsFlying"], mount)
+            if Flightmode == "All" or (Flightmode == "310" and isSwiftFlyingMount) then
+              table.insert(currentMounts["myMountsFlying"], mount)
+            end
           end
           if isSwimmingMount then
             table.insert(currentMounts["myMountsSwimming"], mount)
@@ -423,6 +443,7 @@ end
 local function InitialStartup(self, event, ...)
   GetRidingSkill()
   LocalizeMountName()
+  print("WRM Flightmode set to: " .. Flightmode)
   UpdateMyMounts() --Update mount table with current mounts
   UpdateMountMacro(true)
 end
@@ -453,6 +474,14 @@ local function InitialStartupOfSavedVariables()
   if SettingsVersion == nil then
     SettingsVersion = 0
   end
+  if Flightmode == nil then
+    print("setting flightmode based on ridingskill: " .. tostring(ridingSkill))
+    if ridingSkill >= 300 then
+      Flightmode = "310"
+    else
+      Flightmode = "All"
+    end
+  end
 
   if SettingsVersion < 1 then
     updateSavedWeightTo100()
@@ -462,9 +491,10 @@ end
 
 --Handles the entering world event
 local function InitialStartupHandler(self, event, ...)
+  GetRidingSkill()
   InitialStartupOfSavedVariables()
   InitialStartup(self, event, ...) --Gets the addon into a usable state
-  wrm_wait(10, InitialStartup, self, event, ...) --Reruns startup incase parts of the API had not started yet (Updating Macros can fail if called too early)
+  --wrm_wait(10, InitialStartup, self, event, ...) --Reruns startup incase parts of the API had not started yet (Updating Macros can fail if called too early)
 end
 
 local function stringStarts(String,Start) -- Check if string starts with the given string
@@ -572,6 +602,8 @@ local function WRMHandler(parameter)
       PrintMountTypeID(mountName)
     elseif parameterLower == "settings" then
       print("Current Settings Version: " .. tostring(SettingsVersion))
+    elseif parameterLower == "flightmode" then
+      print("Current flightmode: " .. tostring(Flightmode))
     elseif stringStarts(parameterLower, "set") then
       splitParameter = splitString(parameter)
       if string.lower(splitParameter[2]) == "category" then
@@ -586,14 +618,26 @@ local function WRMHandler(parameter)
         setType = string.gsub(setType, '^%s*(.-)%s*$', '%1')
 
         SaveMount(setType, splitParameter[tablelength(splitParameter)])
+      elseif string.lower(splitParameter[2]) == "flightmode" then
+        setType = string.sub(parameter, 16, string.len(parameter)) --"Set Flightmode"
+        if string.lower(setType) == "all" then
+          Flightmode = "All"
+          print("Flightmode set to: " .. tostring(Flightmode))
+        elseif string.lower(setType) == "310" then
+          Flightmode = "310"
+          print("Flightmode set to: " .. tostring(Flightmode))
+        else
+          print("Flightmode could not be set to " .. tostring(setType) .. " please use a valid option All, 310")
+        end
+        InitialStartup()
       else
-        print('Accepted Parameters are: "Set Mount [MountName] [Weight]", "Set Category [CategoryName] [Weight]"')
+        print('Accepted Parameters are: "Set Mount [MountName] [Weight]", "Set Category [CategoryName] [Weight]", "Set Flightmode [Flightmode]"')
       end
     elseif parameterLower == "dump mounts" then
       DumpMounts()
     else
       print('Parameter was: ' .. parameter) --Print a list of valid command to the console
-      print('Accepted Parameters are: "list", "list usable", "list ground", "list flying", "listCategories", "update", "debug", "zone", "Set Mount [MountName] [Weight]", "Set Category [CategoryName] [Weight]", "MountType [Mount Name]", "Settings", "Dump Mounts"')
+      print('Accepted Parameters are: "list", "list usable", "list ground", "list flying", "listCategories", "update", "debug", "zone", "Set Mount [MountName] [Weight]", "Set Category [CategoryName] [Weight]", "Set Flightmode [Flightmode]", "MountType [Mount Name]", "Settings", "Dump Mounts"')
     end
   else --If no parameter was supplied update macro with new random mounts
     wrm_wait(0.1, UpdateMountMacro, false)
@@ -625,6 +669,10 @@ EnterWorldFrame:SetScript("OnEvent", InitialStartupHandler)
 local ChangeZoneFrame = CreateFrame("Frame")
 ChangeZoneFrame:RegisterEvent("ZONE_CHANGED")
 ChangeZoneFrame:SetScript("OnEvent", ZoneChangeHandler)
+
+local ChangeZoneAreaFrame = CreateFrame("Frame")
+ChangeZoneAreaFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+ChangeZoneAreaFrame:SetScript("OnEvent", ZoneChangeHandler)
 
 
 -- Register slash commands

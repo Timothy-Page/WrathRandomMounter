@@ -1,12 +1,13 @@
 ## Interface: 30403
 ## Title: WrathRandomMounter
 ## Author: Tranzalore
-## Version: 1.4.1
+## Version: 1.4.2
 ## SavedVariablesPerCharacter: SavedMountWeights
 ## SavedVariablesPerCharacter: SavedMountCategoriesWeights
 ## SavedVariablesPerCharacter: DumpAllMounts
 ## SavedVariablesPerCharacter: RandomMode
 ## SavedVariablesPerCharacter: SettingsVersion
+## SavedVariablesPerCharacter: Flightmode
 
 Lib\Mounts.lua
 Lib\Zones.lua
