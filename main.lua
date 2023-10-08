@@ -4,6 +4,7 @@ SLASH_WRM1 = "/WRM"
 local inDebugMode = false
 local defaultCategoryWeight = 100
 local defaultMountWeight = 100
+local defaultFavoriteMultiplier = 10
 
 local mounted = IsMounted -- make a local copy of the function and not the result of one execution
 local inCombat = InCombatLockdown -- make a local copy of the function and not the result of one execution
@@ -190,17 +191,23 @@ local function GetRandomMount(mountArray)
     for i, mount in ipairs(mountList) do
       mountName = mount[2]
       mountWeight = SavedMountWeights[mountName]
+      multiplier = 1
       if mountWeight == nil then
-        mountWeight = defaultMountWeight
+        if mount[8] then --isFavorite
+          multiplier = defaultFavoriteMultiplier
+        end
+        mountWeight = defaultMountWeight*multiplier
       end
       
       if mountWeight > 0 then
         categorieName = mount[7]
         categorieWeight = SavedMountCategoriesWeights[categorieName]
         if categorieWeight == nil then
-          categorieWeight = defaultCategoryWeight
+          categorieWeight = defaultCategoryWeight*multiplier
         end
-        categories[tostring(categorieName)] = categorieWeight
+        if categories[tostring(categorieName)] == nil or categories[tostring(categorieName)] < categorieWeight then
+          categories[tostring(categorieName)] = categorieWeight
+        end
       end
     end
     
@@ -229,7 +236,11 @@ local function GetRandomMount(mountArray)
       if categorieName == categorie then
         mountWeight = SavedMountWeights[mountName]
         if mountWeight == nil then
-          mountWeight = defaultMountWeight
+          multiplier = 1
+          if mount[8] then --isFavorite
+            multiplier = defaultFavoriteMultiplier
+          end
+          mountWeight = defaultMountWeight*multiplier
         end
         mounts[tostring(mountName)] = mountWeight
       end
@@ -425,7 +436,7 @@ local function UpdateMyMounts()
 
     if (playerFaction == "Alliance" and (faction == nil or faction == 1)) or (playerFaction == "Horde" and (faction == nil or faction == 0)) then --Correct Faction
       if isCollected and not shouldHideOnChar then --Have mount and usable on character
-        mount = {creatureSpellID, name, mountID, isGroundMount, isFlyingMount, isSwimmingMount, category}
+        mount = {creatureSpellID, name, mountID, isGroundMount, isFlyingMount, isSwimmingMount, category, isFavorite}
         table.insert(myMounts["KnownMounts"], mount)
         if isUsable then --Usable in current zone -- or (inDalaran and isMultiSpeed)
           table.insert(myMounts["UsableMounts"], mount)
@@ -551,7 +562,6 @@ local function SaveCategory(categoryName, categoryValue)
   else
     print("Category \"" .. categoryName .. "\" could not be found")
   end
-  InitialStartup()
 end
 
 local function SaveMount(mountName, mountValue)
@@ -572,7 +582,6 @@ local function SaveMount(mountName, mountValue)
   else
     print("Mount \"" .. mountName .. "\" could not be found")
   end
-  InitialStartup()
 end
 
 --Captures console commands that are entered
@@ -632,14 +641,24 @@ local function WRMHandler(parameter)
         setType = string.sub(parameter, 13, string.len(parameter)) --"Set Category"
         setType = string.gsub(setType, splitParameter[tablelength(splitParameter)], "")
         setType = string.gsub(setType, '^%s*(.-)%s*$', '%1')
-
-        SaveCategory(setType, splitParameter[tablelength(splitParameter)])
+        
+        if string.lower(setType) == "all" and splitParameter[tablelength(splitParameter)] == "reset" then
+          SavedMountCategoriesWeights = {}
+          print("Mount Category Weights have been reset")
+        else
+          SaveCategory(setType, splitParameter[tablelength(splitParameter)])
+        end
       elseif string.lower(splitParameter[2]) == "mount" then
         setType = string.sub(parameter, 10, string.len(parameter)) --"Set Mount"
         setType = string.gsub(setType, splitParameter[tablelength(splitParameter)], "")
         setType = string.gsub(setType, '^%s*(.-)%s*$', '%1')
 
-        SaveMount(setType, splitParameter[tablelength(splitParameter)])
+        if string.lower(setType) == "all" and splitParameter[tablelength(splitParameter)] == "reset" then
+          SavedMountWeights = {}
+          print("Mount Weights have been reset")
+        else
+          SaveMount(setType, splitParameter[tablelength(splitParameter)])
+        end
       elseif string.lower(splitParameter[2]) == "flightmode" then
         setType = string.sub(parameter, 16, string.len(parameter)) --"Set Flightmode"
         if string.lower(setType) == "all" then
