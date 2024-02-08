@@ -436,7 +436,8 @@ local function UpdateMyMounts()
 
     if (playerFaction == "Alliance" and (faction == nil or faction == 1)) or (playerFaction == "Horde" and (faction == nil or faction == 0)) then --Correct Faction
       if isCollected and not shouldHideOnChar then --Have mount and usable on character
-        mount = {creatureSpellID, name, mountID, isGroundMount, isFlyingMount, isSwimmingMount, category, isFavorite}
+        mountSpellName, _, _, _, _, _ = GetSpellInfo(spellID);
+        mount = {creatureSpellID, mountSpellName, mountID, isGroundMount, isFlyingMount, isSwimmingMount, category, isFavorite}
         table.insert(myMounts["KnownMounts"], mount)
         if isUsable then --Usable in current zone -- or (inDalaran and isMultiSpeed)
           table.insert(myMounts["UsableMounts"], mount)
