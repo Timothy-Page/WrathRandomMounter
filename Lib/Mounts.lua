@@ -263,5 +263,6 @@ WrathRandomMounter.itemMounts = {
     ["387323"] ={"X-51 Nether-Rocket", 387323, 0, 2.8, 0.6, 0, "Rocket", "?", 1, 0},
     ["388516"] ={"Hao-Yue, River Foreseer", 388516, 0, 1, 0.6, 0, "Rabit", "?", 1, 0},
     ["394209"] ={"Festering Emerald Drake", 394209, 0, 2.8, 0.6, 0, "Drake", "Sub", 1, 0},
-    ["416158"] ={"Nightmarish Emerald Drake", 416158, 0, 2.8, 1.5, 0, "Drake", "?", 1, 0}
+    ["416158"] ={"Nightmarish Emerald Drake", 416158, 0, 2.8, 1.5, 0, "Drake", "?", 1, 0},
+    ["75207"] ={"Abyssal Seahorse", 75207, 54465, 0, 0, 1, "Seahorse", "Quest", 1, 0}
 }   
