@@ -8,6 +8,7 @@
 ## SavedVariablesPerCharacter: RandomMode
 ## SavedVariablesPerCharacter: SettingsVersion
 ## SavedVariablesPerCharacter: Flightmode
+## SavedVariablesPerCharacter: AllMountsList
 
 Lib\Mounts.lua
 Lib\Zones.lua

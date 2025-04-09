@@ -161,7 +161,9 @@ local function PrintCategories()
     if categorieWeight == nil then
       categorieWeight = defaultCategoryWeight
     end
-    categories[tostring(categorieName)] = categorieWeight
+    if categories[tostring(categorieName)] == nil or categories[tostring(categorieName)] < categorieWeight then
+      categories[tostring(categorieName)] = categorieWeight
+    end
   end
 
   orderedCategories = {}
@@ -345,11 +347,26 @@ local function tableContains(table, element)
   return false
 end
 
+local function AddKnownMountCategory(category)
+  if myMountsCategories["KnownMountsCategories"][category] == nil then
+    table.insert(myMountsCategories["KnownMountsCategories"], category)
+  end
+end
+
+local function AddUsableMountCategory(category)
+  if myMountsCategories["UsableMountsCategories"][category] == nil then
+    table.insert(myMountsCategories["UsableMountsCategories"], category)
+  end
+end
+
 --Updates the mount tables based on the companion API
 local function UpdateMyMounts()
 
   myMounts["UsableMounts"] = {}
   myMounts["KnownMounts"] = {}
+  myMountsCategories["UsableMountsCategories"] = {}
+  myMountsCategories["KnownMountsCategories"] = {}
+
   currentMounts = {
     ["myMountsGround"] = {},
     ["myMountsFlying"] = {},
@@ -369,7 +386,6 @@ local function UpdateMyMounts()
   while mountCounter <= #mountIDs do
     name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, mountID = C_MountJournal.GetMountInfoByID(mountIDs[mountCounter])
     creatureDisplayInfoID, description, source, isSelfMount, mountTypeID, uiModelSceneID, animID, spellVisualKitID, disablePlayerMountPreview = C_MountJournal.GetMountInfoExtraByID(mountID)
-
 
     --1:Name, 2:SpellID, 4:MaxSpeed, 5:MinSpeed, 6:SwimSpeed, 7:Category, 9:NormalMount, 10:AQMount
     if spellID ~= nil and name ~= nil then
@@ -438,8 +454,10 @@ local function UpdateMyMounts()
       if isCollected and not shouldHideOnChar then --Have mount and usable on character
         mount = {creatureSpellID, name, mountID, isGroundMount, isFlyingMount, isSwimmingMount, category, isFavorite}
         table.insert(myMounts["KnownMounts"], mount)
+        AddKnownMountCategory(category)
         if isUsable then --Usable in current zone -- or (inDalaran and isMultiSpeed)
           table.insert(myMounts["UsableMounts"], mount)
+          AddUsableMountCategory(category)
 
           if isGroundMount then
             table.insert(currentMounts["myMountsGround"], mount)
@@ -611,26 +629,28 @@ end
 
 local function DebugMountList()
   AllMountsByID = {}
+  AllMountsList = {}
 
   mountIDs = C_MountJournal.GetMountIDs() --List of all avalible MountIDs
   mountCounter = 1 --loop counter
   while mountCounter <= #mountIDs do
     name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, mountID = C_MountJournal.GetMountInfoByID(mountIDs[mountCounter])
     creatureDisplayInfoID, description, source, isSelfMount, mountTypeID, uiModelSceneID, animID, spellVisualKitID, disablePlayerMountPreview = C_MountJournal.GetMountInfoExtraByID(mountID)
-    
 
     if name ~= nil then
       AllMountsByID[spellID] = {mountID, name, spellID, mountTypeID}
+      AllMountsList[spellID] = name
     end
-    
+
     mountCounter = mountCounter + 1
   end
   
+
   print('All mounts missing from the file')
   for key, mount in pairs(AllMountsByID) do
-    spellID = tonumber(mount[1])
+    spellID = tonumber(mount[3])
     if WrathRandomMounter.itemMounts[spellID] == nil then
-      print(mount[1] .. ": " .. mount[2])
+      print(mount[3] .. ": " .. mount[2])
     end
   end
 
