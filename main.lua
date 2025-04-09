@@ -377,7 +377,7 @@ local function UpdateMyMounts()
       maxSpeed = nil
       minSpeed = nil
       swimSpeed = nil
-      localMount = WrathRandomMounter.itemMounts[tostring(spellID)]
+      localMount = WrathRandomMounter.itemMounts[spellID]
 
       if localMount ~= nil then
         category = localMount[7]
@@ -385,7 +385,7 @@ local function UpdateMyMounts()
         minSpeed = localMount[5]
         swimSpeed = localMount[6]
       else
-        --print("the mount with spellID " .. tostring(spellID) .. "was not found")
+        --print("the mount with spellID " .. spellID .. "was not found")
       end
 
       if maxSpeed == nil then
@@ -609,6 +609,35 @@ local function DumpMounts()
   print("List of mounts was Saved")
 end
 
+local function DebugMountList()
+  AllMountsByID = {}
+
+  mountIDs = C_MountJournal.GetMountIDs() --List of all avalible MountIDs
+  mountCounter = 1 --loop counter
+  while mountCounter <= #mountIDs do
+    name, spellID, icon, isActive, isUsable, sourceType, isFavorite, isFactionSpecific, faction, shouldHideOnChar, isCollected, mountID = C_MountJournal.GetMountInfoByID(mountIDs[mountCounter])
+    creatureDisplayInfoID, description, source, isSelfMount, mountTypeID, uiModelSceneID, animID, spellVisualKitID, disablePlayerMountPreview = C_MountJournal.GetMountInfoExtraByID(mountID)
+    
+
+    if name ~= nil then
+      AllMountsByID[spellID] = {mountID, name, spellID, mountTypeID}
+    end
+    
+    mountCounter = mountCounter + 1
+  end
+  
+  print('All mounts missing from the file')
+  for key, mount in pairs(AllMountsByID) do
+    spellID = tonumber(mount[1])
+    if WrathRandomMounter.itemMounts[spellID] == nil then
+      print(mount[1] .. ": " .. mount[2])
+    end
+  end
+
+  print('All mounts with the wrong name in file')
+
+end
+
 local function WRMHandler(parameter)
   if(string.len(parameter) > 0) then --If a parameter was supplied
     parameterLower = string.lower(parameter)
@@ -635,6 +664,9 @@ local function WRMHandler(parameter)
       print("Current Settings Version: " .. tostring(SettingsVersion))
     elseif parameterLower == "flightmode" then
       print("Current flightmode: " .. tostring(Flightmode))
+    elseif parameterLower == "debugmountlist" then
+      print("This will List issues with the mount list")
+      DebugMountList()
     elseif stringStarts(parameterLower, "set") then
       splitParameter = splitString(parameter)
       if string.lower(splitParameter[2]) == "category" then
